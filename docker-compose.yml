@@ -1,0 +1,23 @@
+services:
+  taproom:
+    build: .
+    container_name: taproom
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - taproom-data:/data
+    environment:
+      - PORT=3000
+      - SESSION_SECRET=change-me-to-a-long-random-string
+      # Optional: set DB path (default is /data/taproom.db)
+      # - DB_PATH=/data/taproom.db
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/auth/me"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  taproom-data:
+    driver: local

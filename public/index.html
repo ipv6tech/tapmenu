@@ -1,0 +1,1845 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CellarMenu Pro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,700;1,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --accent: #f59e0b;
+  --accent-dim: rgba(245,158,11,0.12);
+  --bg: #0a0a0a;
+  --surface: #141414;
+  --surface2: #1c1c1c;
+  --surface3: #252525;
+  --border: rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.13);
+  --text: #f0ede8;
+  --text-muted: #888;
+  --text-dim: #4a4a4a;
+  --green: #22c55e;
+  --red: #ef4444;
+  --radius: 10px;
+  --font-display: 'Bebas Neue', sans-serif;
+  --font-body: 'DM Sans', sans-serif;
+  --font-mono: 'DM Mono', monospace;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font-body); background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+
+/* ── NAV ── */
+#app-nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: space-between; gap: 0.9rem;
+  padding: 0 1.5rem; height: 56px;
+  background: rgba(10,10,10,0.95); backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+}
+.hamburger-btn { background: none; border: none; color: var(--text); font-size: 1.3rem; line-height: 1; cursor: pointer; padding: 0.35rem 0.5rem; border-radius: 6px; transition: background 0.15s; }
+.hamburger-btn:hover { background: var(--surface2); }
+.nav-brand { display: flex; align-items: center; gap: 0.45rem; font-family: var(--font-display); font-size: 1.5rem; letter-spacing: 0.06em; color: var(--accent); cursor: pointer; }
+.nav-mini-logo { height: 24px; width: auto; object-fit: contain; }
+.nav-panel-overlay { display: none; position: fixed; inset: 0; z-index: 150; background: rgba(0,0,0,0.55); backdrop-filter: blur(2px); }
+.nav-panel-overlay.open { display: block; }
+.nav-panel { position: fixed; top: 0; right: -260px; bottom: 0; width: 240px; z-index: 151; background: var(--surface); border-left: 1px solid var(--border); padding: 72px 0.75rem 1rem; display: flex; flex-direction: column; gap: 0.2rem; transition: right 0.25s cubic-bezier(0.32,0.72,0,1); }
+.nav-panel.open { right: 0; }
+.nav-btn { background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 0.4rem 0.75rem; border-radius: 6px; font: 500 0.8rem var(--font-body); transition: all 0.15s; }
+.nav-btn:hover, .nav-btn.active { color: var(--accent); background: var(--accent-dim); }
+.nav-btn.admin-btn { color: var(--text-dim); }
+.nav-panel .nav-btn { width: 100%; text-align: left; padding: 0.65rem 0.9rem; font-size: 0.9rem; }
+
+/* ── PAGES ── */
+.page { display: none; min-height: 100vh; padding-top: 56px; }
+.page.active { display: block; }
+
+/* ═══════════════════════════════ DISPLAY PAGE ═══════════════════════════════ */
+.display-header {
+  text-align: center; padding: 1.1rem 1.5rem 0.9rem;
+  background: radial-gradient(ellipse 80% 120px at 50% 0%, rgba(245,158,11,0.06) 0%, transparent 100%);
+  border-bottom: 1px solid var(--border);
+}
+.display-header.hidden { display: none; }
+.display-header img.logo { height: 40px; margin-bottom: 0.4rem; object-fit: contain; }
+.display-header.logo-as-brand img.logo { height: 64px; margin: 0 auto 0.4rem; display: block; }
+.display-header h1 { font-family: var(--font-display); font-size: clamp(1.6rem, 4vw, 3rem); letter-spacing: 0.1em; line-height: 1; }
+.display-header .tagline { color: var(--text-muted); font-size: 0.72rem; letter-spacing: 0.25em; text-transform: uppercase; margin-top: 0.3rem; }
+
+/* ═══ PIPELINE SECTION ═══ */
+#pipeline-section { border-top: 1px solid var(--border); padding: 0.75rem 1.5rem 1rem; background: var(--surface); }
+#pipeline-section.hidden { display: none; }
+.pipeline-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.6rem; }
+.pipeline-header-title { font: 600 0.68rem var(--font-mono); color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.12em; }
+.pipeline-header-count { font: 400 0.65rem var(--font-mono); color: var(--text-dim); background: var(--surface2); border: 1px solid var(--border); border-radius: 999px; padding: 0.1rem 0.5rem; }
+.pipeline-row { display: flex; flex-wrap: wrap; gap: 0.45rem; }
+.pipeline-chip { display: inline-flex; align-items: center; gap: 0.5rem; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 0.3rem 0.75rem 0.3rem 0.5rem; font-size: 0.82rem; line-height: 1.25; cursor: default; user-select: none; }
+.pipeline-chip-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.pipeline-chip-name { font-weight: 600; color: var(--text); }
+.pipeline-chip-meta { font-size: 0.7rem; color: var(--text-muted); }
+.pipeline-chip-status { font: 500 0.62rem var(--font-mono); color: var(--text-dim); background: var(--surface3); border-radius: 4px; padding: 0.1rem 0.35rem; text-transform: uppercase; letter-spacing: 0.06em; flex-shrink: 0; }
+.pipeline-chip-bar { width: 52px; height: 4px; background: var(--surface3); border-radius: 2px; overflow: hidden; flex-shrink: 0; }
+.pipeline-chip-bar-fill { height: 100%; border-radius: 2px; background: var(--accent); transition: width 0.4s; }
+
+/* ═══ GRID (compact, default) ═══ */
+.tap-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1px; background: var(--border); }
+.tap-grid.layout-grid .tap-card { background: var(--bg); padding: 1.25rem 1.375rem; cursor: pointer; transition: background 0.15s; position: relative; overflow: hidden; }
+.tap-grid.layout-grid .tap-card:hover { background: var(--surface); }
+.tap-grid.layout-grid .tap-card::before { content:''; position:absolute; left:0; top:0; bottom:0; width:4px; background: var(--c, var(--accent)); opacity:0.7; }
+
+/* ═══ LARGE CARDS ═══ */
+.tap-grid.layout-large { grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 1.125rem; background: none; padding: 1.375rem; }
+.tap-grid.layout-large .tap-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+  cursor: pointer; transition: all 0.18s; overflow: hidden; display: flex; flex-direction: column;
+}
+.tap-grid.layout-large .tap-card:hover { border-color: var(--border2); transform: translateY(-1px); box-shadow: 0 8px 32px rgba(0,0,0,0.35); }
+.tap-card-color-bar { height: 5px; width: 100%; background: var(--c, var(--accent)); flex-shrink: 0; }
+.tap-card-large-inner { padding: 1.25rem 1.375rem 1.375rem; display: flex; flex-direction: column; flex: 1; }
+.tap-card-large-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.75rem; margin-bottom: 0.6rem; }
+.tap-card-large-meta { flex: 1; min-width: 0; }
+.tap-label-line { font: 500 0.64rem var(--font-mono); color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 0.3rem; }
+.tap-name-lg { font-size: 1.3rem; font-weight: 700; line-height: 1.2; }
+.tap-producer-lg { font-size: 0.8rem; color: var(--text-muted); margin-top: 0.2rem; }
+.tap-style-lg { font-size: 0.78rem; color: var(--text-muted); font-style: italic; margin-top: 0.5rem; }
+.tap-notes-lg { font-size: 0.78rem; color: var(--text-muted); font-style: italic; line-height: 1.55; margin-top: 0.5rem; }
+.tap-stats-row { display: flex; gap: 0.5rem; flex-wrap: wrap; margin: 0.875rem 0 0.75rem; }
+.tap-stat { background: var(--surface2); border: 1px solid var(--border); border-radius: 7px; padding: 0.45rem 0.75rem; text-align: center; }
+.tap-stat-val { font-family: var(--font-display); font-size: 1.15rem; color: var(--accent); letter-spacing: 0.03em; line-height: 1; }
+.tap-stat-lbl { font: 400 0.58rem var(--font-mono); color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 0.15rem; }
+.tap-card-large-footer { display: flex; align-items: center; justify-content: space-between; padding-top: 0.75rem; border-top: 1px solid var(--border); margin-top: auto; gap: 0.75rem; flex-wrap: wrap; }
+.serve-row { display: flex; align-items: center; gap: 0.625rem; font-size: 0.76rem; color: var(--text-muted); flex-wrap: wrap; }
+.serve-chip { display: inline-flex; align-items: center; gap: 0.3rem; background: var(--surface2); border: 1px solid var(--border); border-radius: 5px; padding: 0.22rem 0.55rem; font-size: 0.72rem; }
+.on-tap-date { font: 400 0.68rem var(--font-mono); color: var(--text-dim); }
+
+/* ═══ LIST ═══ */
+.tap-grid.layout-list { grid-template-columns: 1fr; gap: 0; background: none; max-width: 800px; margin: 0 auto; padding: 1rem 1.5rem; }
+.tap-grid.layout-list .tap-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 0.5rem; cursor: pointer; transition: all 0.15s; overflow: hidden; display: grid; grid-template-columns: 5px 1fr auto; }
+.tap-grid.layout-list .tap-card:hover { border-color: var(--border2); background: var(--surface2); }
+.list-color-strip { background: var(--c, var(--accent)); }
+.list-body { padding: 0.8rem 1.1rem; }
+.list-label { font: 500 0.62rem var(--font-mono); color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.2rem; }
+.list-name { font-size: 0.975rem; font-weight: 700; line-height: 1.2; }
+.list-sub { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.15rem; }
+.list-badges { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.4rem; }
+.list-right { padding: 0.8rem 1rem 0.8rem 0; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-between; min-width: 90px; gap: 0.4rem; }
+
+/* shared badges */
+.badge { font: 500 0.66rem var(--font-mono); padding: 0.18rem 0.45rem; border-radius: 4px; background: var(--surface2); border: 1px solid var(--border); color: var(--text-muted); white-space: nowrap; }
+.badge.abv { color: var(--accent); border-color: rgba(245,158,11,0.25); background: rgba(245,158,11,0.07); }
+.badge.ibu { color: #60a5fa; border-color: rgba(96,165,250,0.25); background: rgba(96,165,250,0.07); }
+.badge.cat { color: #a78bfa; border-color: rgba(167,139,250,0.25); background: rgba(167,139,250,0.07); }
+.badge.serve { color: #34d399; border-color: rgba(52,211,153,0.25); background: rgba(52,211,153,0.07); }
+.tap-status-badge { display: inline-block; font: 600 0.62rem var(--font-mono); padding: 0.18rem 0.45rem; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.05em; }
+.tap-status-badge.active { color: var(--green); background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.2); }
+.tap-status-badge.coming-soon { color: #fbbf24; background: rgba(251,191,36,0.1); border: 1px solid rgba(251,191,36,0.2); }
+.tap-status-badge.kicked { color: var(--red); background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.2); }
+.keg-bar-wrap { display: flex; align-items: center; gap: 0.5rem; }
+.keg-bar-track { flex: 1; height: 4px; background: var(--surface2); border-radius: 2px; overflow: hidden; }
+.keg-bar-fill { height: 100%; border-radius: 2px; transition: width 0.4s; }
+.keg-label { font: 400 0.66rem var(--font-mono); color: var(--text-dim); white-space: nowrap; }
+.empty-state { grid-column: 1/-1; padding: 4rem 2rem; text-align: center; color: var(--text-dim); }
+
+/* ═══════════════════════════════ MOBILE MENU ═══════════════════════════════ */
+.menu-wrap { max-width: 480px; margin: 0 auto; padding: 0 1rem 2rem; }
+.menu-header { text-align: center; padding: 1.5rem 0 1rem; }
+.menu-header h1 { font-family: var(--font-display); font-size: 2rem; letter-spacing: 0.06em; }
+.menu-header .tagline { font-size: 0.75rem; color: var(--text-muted); letter-spacing: 0.2em; text-transform: uppercase; margin-top: 0.3rem; }
+.menu-cats { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 0.875rem; padding-bottom: 0.875rem; border-bottom: 1px solid var(--border); }
+.menu-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 0.55rem; cursor: pointer; transition: border-color 0.15s; overflow: hidden; display: grid; grid-template-columns: 5px 1fr; }
+.menu-card:hover { border-color: var(--border2); }
+.menu-card-strip { }
+.menu-card-body { padding: 0.8rem 1rem; }
+
+/* ═══════════════════════════════ MODAL ═══════════════════════════════ */
+.modal-overlay { display: none; position: fixed; inset: 0; z-index: 500; background: rgba(0,0,0,0.82); backdrop-filter: blur(6px); align-items: center; justify-content: center; padding: 1rem; }
+.modal-overlay.open { display: flex; }
+.modal { background: var(--surface); border: 1px solid var(--border2); border-radius: 16px; max-width: 560px; width: 100%; max-height: 90vh; overflow-y: auto; animation: modal-in 0.2s ease; }
+@keyframes modal-in { from { opacity:0; transform: translateY(14px) scale(0.97); } }
+.modal-color-band { height: 5px; border-radius: 16px 16px 0 0; }
+.modal-header { padding: 1.25rem 1.5rem 0; display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
+.modal-close { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 1.2rem; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border-radius: 6px; transition: all 0.15s; flex-shrink: 0; }
+.modal-close:hover { color: var(--text); background: var(--surface2); }
+.modal-body { padding: 1rem 1.5rem 1.5rem; }
+.modal-tap-label { font: 500 0.65rem var(--font-mono); color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 0.25rem; }
+.modal-tap-name { font-size: 1.5rem; font-weight: 700; line-height: 1.2; }
+.modal-tap-producer { color: var(--text-muted); font-size: 0.875rem; margin-top: 0.25rem; }
+.modal-section { margin-top: 1.1rem; padding-top: 1.1rem; border-top: 1px solid var(--border); }
+.modal-section-title { font: 500 0.63rem var(--font-mono); color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.55rem; }
+.modal-description { font-size: 0.875rem; color: var(--text-muted); line-height: 1.65; }
+.modal-tasting-notes { font-size: 0.875rem; color: var(--text); line-height: 1.65; font-style: italic; }
+.stat-row { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.stat { text-align: center; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 0.7rem 0.875rem; flex: 1; min-width: 62px; }
+.stat-val { font-family: var(--font-display); font-size: 1.35rem; color: var(--accent); }
+.stat-lbl { font: 400 0.6rem var(--font-mono); color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 0.1rem; }
+.modal-links { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.modal-link { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.4rem 0.8rem; border-radius: 7px; font-size: 0.8rem; font-weight: 500; text-decoration: none; transition: all 0.15s; border: 1px solid var(--border); background: var(--surface2); color: var(--text-muted); }
+.modal-link:hover { color: var(--text); border-color: var(--accent); background: var(--accent-dim); }
+.modal-link.untappd { color: #fbbf24; border-color: rgba(251,191,36,0.3); background: rgba(251,191,36,0.07); }
+.integration-badge { display: inline-flex; align-items: center; font: 400 0.65rem var(--font-mono); padding: 0.18rem 0.45rem; border-radius: 4px; background: rgba(167,139,250,0.07); border: 1px solid rgba(167,139,250,0.2); color: #a78bfa; }
+.qr-section { text-align: center; }
+.qr-img { max-width: 160px; border-radius: 8px; background: white; padding: 6px; }
+.qr-url { font: 400 0.65rem var(--font-mono); color: var(--text-dim); margin-top: 0.4rem; word-break: break-all; }
+.serve-details-grid { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+.serve-detail-item { display: flex; align-items: center; gap: 0.45rem; font-size: 0.82rem; background: var(--surface2); border: 1px solid var(--border); border-radius: 7px; padding: 0.4rem 0.75rem; }
+.serve-detail-item .sdi-label { color: var(--text-dim); font-size: 0.68rem; font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.06em; margin-right: 0.1rem; }
+.serve-detail-item .sdi-val { color: var(--text); font-weight: 600; font-size: 0.82rem; }
+
+/* ═══════════════════════════════ ADMIN ═══════════════════════════════ */
+#admin-page { background: var(--bg); }
+.admin-layout { display: flex; min-height: calc(100vh - 56px); }
+.admin-sidebar { width: 220px; flex-shrink: 0; background: var(--surface); border-right: 1px solid var(--border); padding: 1.25rem 0; position: sticky; top: 56px; align-self: flex-start; height: calc(100vh - 56px); overflow-y: auto; }
+.sidebar-label { font: 500 0.62rem var(--font-mono); color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.1em; padding: 0.5rem 1.125rem 0.3rem; }
+.sidebar-btn { display: flex; align-items: center; gap: 0.55rem; width: calc(100% - 0.75rem); margin: 0 0.375rem; background: none; border: none; color: var(--text-muted); padding: 0.5rem 0.75rem; border-radius: 7px; cursor: pointer; font: 400 0.84rem var(--font-body); text-align: left; transition: all 0.12s; }
+.sidebar-btn:hover { color: var(--text); background: var(--surface2); }
+.sidebar-btn.active { color: var(--accent); background: var(--accent-dim); }
+.sidebar-btn .icon { font-size: 0.9rem; width: 1.1rem; text-align: center; flex-shrink: 0; }
+.admin-main { flex: 1; padding: 2rem; overflow-x: auto; min-width: 0; }
+.admin-panel { display: none; }
+.admin-panel.active { display: block; }
+.admin-panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; gap: 1rem; flex-wrap: wrap; }
+.panel-title { font-family: var(--font-display); font-size: 1.8rem; letter-spacing: 0.04em; }
+.auth-screen { max-width: 380px; margin: 4rem auto; padding: 2rem; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; }
+.auth-screen h2 { font-family: var(--font-display); font-size: 1.8rem; margin-bottom: 0.2rem; }
+.auth-screen p { color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1.5rem; }
+.form-group { margin-bottom: 0.875rem; }
+.form-label { display: block; font: 500 0.7rem var(--font-mono); color: var(--text-muted); margin-bottom: 0.35rem; text-transform: uppercase; letter-spacing: 0.06em; }
+.form-input, .form-select, .form-textarea { width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text); border-radius: var(--radius); padding: 0.575rem 0.875rem; font: 400 0.875rem var(--font-body); transition: border-color 0.15s; outline: none; }
+.form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--accent); }
+.form-textarea { min-height: 80px; resize: vertical; }
+.form-select option { background: var(--surface); }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.875rem; }
+.form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.875rem; }
+.btn { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.575rem 1.2rem; border-radius: var(--radius); border: none; cursor: pointer; font: 600 0.85rem var(--font-body); transition: all 0.15s; text-decoration: none; white-space: nowrap; }
+.btn-primary { background: var(--accent); color: #000; }
+.btn-primary:hover { background: #fbbf24; }
+.btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+.btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+.btn-danger { background: rgba(239,68,68,0.08); color: var(--red); border: 1px solid rgba(239,68,68,0.2); }
+.btn-danger:hover { background: rgba(239,68,68,0.18); }
+.btn-sm { padding: 0.33rem 0.7rem; font-size: 0.76rem; }
+.btn-icon { padding: 0.375rem; aspect-ratio: 1; justify-content: center; }
+.taps-table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 10px; }
+table { width: 100%; border-collapse: collapse; }
+thead { background: var(--surface2); }
+th { padding: 0.65rem 1rem; text-align: left; font: 500 0.66rem var(--font-mono); color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; border-bottom: 1px solid var(--border); white-space: nowrap; }
+td { padding: 0.65rem 1rem; border-bottom: 1px solid var(--border); font-size: 0.84rem; vertical-align: middle; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: rgba(255,255,255,0.02); }
+.keg-mini { display: flex; align-items: center; gap: 0.5rem; }
+.keg-mini-bar { width: 50px; height: 3px; background: var(--surface3); border-radius: 2px; overflow: hidden; }
+.keg-mini-fill { height: 100%; border-radius: 2px; }
+.settings-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 1.375rem; margin-bottom: 1.125rem; }
+.settings-card h3 { font-size: 0.95rem; font-weight: 600; margin-bottom: 1rem; }
+.toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--border); }
+.toggle-row:last-child { border-bottom: none; }
+.toggle-label { font-size: 0.875rem; }
+.toggle { position: relative; width: 38px; height: 21px; }
+.toggle input { opacity: 0; width: 0; height: 0; }
+.toggle-slider { position: absolute; inset: 0; background: var(--surface3); border-radius: 999px; cursor: pointer; border: 1px solid var(--border); transition: 0.2s; }
+.toggle-slider::after { content: ''; position: absolute; width: 15px; height: 15px; left: 2px; top: 2px; background: var(--text-muted); border-radius: 50%; transition: 0.2s; }
+.toggle input:checked + .toggle-slider { background: var(--accent-dim); border-color: var(--accent); }
+.toggle input:checked + .toggle-slider::after { transform: translateX(17px); background: var(--accent); }
+.color-preview { width: 22px; height: 22px; border-radius: 4px; border: 1px solid var(--border); flex-shrink: 0; }
+.drawer-overlay { display: none; position: fixed; inset: 0; z-index: 400; background: rgba(0,0,0,0.6); backdrop-filter: blur(3px); }
+.drawer-overlay.open { display: block; }
+.drawer { position: fixed; top: 0; right: -100%; bottom: 0; z-index: 401; width: min(580px, 100vw); background: var(--surface); border-left: 1px solid var(--border); transition: right 0.28s cubic-bezier(0.32, 0.72, 0, 1); overflow-y: auto; display: flex; flex-direction: column; }
+.drawer.open { right: 0; }
+.drawer-header { position: sticky; top: 0; z-index: 10; display: flex; align-items: center; justify-content: space-between; padding: 1.125rem 1.5rem; background: var(--surface); border-bottom: 1px solid var(--border); }
+.drawer-title { font-family: var(--font-display); font-size: 1.5rem; letter-spacing: 0.04em; }
+.drawer-body { padding: 1.5rem; flex: 1; }
+.drawer-footer { position: sticky; bottom: 0; display: flex; gap: 0.75rem; justify-content: flex-end; padding: 1rem 1.5rem; background: var(--surface); border-top: 1px solid var(--border); }
+.drawer-section { margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--border); }
+.drawer-section-label { font: 600 0.68rem var(--font-mono); color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.875rem; }
+.keg-slider-wrap { display: flex; align-items: center; gap: 0.75rem; }
+input[type=range] { -webkit-appearance: none; flex: 1; height: 4px; background: var(--surface3); border-radius: 2px; outline: none; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--accent); cursor: pointer; }
+.keg-pct-val { font: 600 0.9rem var(--font-mono); color: var(--accent); min-width: 2.8rem; text-align: right; }
+.toast-container { position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 9999; display: flex; flex-direction: column; gap: 0.5rem; pointer-events: none; }
+.toast { padding: 0.65rem 1.125rem; border-radius: 8px; font-size: 0.84rem; font-weight: 500; animation: toast-in 0.22s ease; max-width: 280px; }
+@keyframes toast-in { from { opacity:0; transform: translateY(8px); } }
+.toast.success { background: rgba(34,197,94,0.12); border: 1px solid rgba(34,197,94,0.25); color: var(--green); }
+.toast.error { background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.25); color: var(--red); }
+.divider { border: none; border-top: 1px solid var(--border); margin: 1rem 0; }
+.text-muted { color: var(--text-muted); }
+.text-sm { font-size: 0.8rem; }
+@media (max-width: 640px) {
+  .admin-sidebar { display: none; }
+  .admin-main { padding: 1rem; }
+  .form-row, .form-row-3 { grid-template-columns: 1fr; }
+  .tap-grid { grid-template-columns: 1fr !important; }
+  .tap-grid.layout-large { padding: 0.75rem !important; gap: 0.75rem !important; }
+}
+</style>
+</head>
+<body>
+
+<nav id="app-nav">
+  <div class="nav-brand" onclick="navigate('display')">
+    <span id="nav-brand-icon">🍺</span><img id="nav-brand-logo" class="nav-mini-logo" src="" alt="" style="display:none">
+    <span id="nav-brand-name">CellarMenu Pro</span>
+  </div>
+  <button class="hamburger-btn" onclick="toggleNavPanel()" aria-label="Open menu">☰</button>
+</nav>
+<div class="nav-panel-overlay" id="nav-panel-overlay" onclick="closeNavPanel()"></div>
+<div class="nav-panel" id="nav-panel">
+  <button class="nav-btn active" id="nav-display" onclick="navigate('display');closeNavPanel()">Display</button>
+  <button class="nav-btn" id="nav-menu" onclick="navigate('menu');closeNavPanel()">Menu</button>
+  <button class="nav-btn admin-btn" id="nav-admin" onclick="navigate('admin');closeNavPanel()">Admin</button>
+</div>
+
+<div class="toast-container" id="toasts"></div>
+
+<!-- ════ DISPLAY PAGE ════ -->
+<div id="display-page" class="page active">
+  <div class="display-header">
+    <img class="logo" id="display-logo" src="" alt="" style="display:none">
+    <h1 id="display-title">CellarMenu Pro</h1>
+    <div class="tagline" id="display-tagline">What's on tap</div>
+  </div>
+  <div class="tap-grid layout-grid" id="display-grid"></div>
+  <div id="pipeline-section" class="hidden">
+    <div class="pipeline-header">
+      <span class="pipeline-header-title" id="pipeline-title">Coming Soon</span>
+      <span class="pipeline-header-count" id="pipeline-count"></span>
+    </div>
+    <div class="pipeline-row" id="pipeline-row"></div>
+  </div>
+  <style id="custom-css-inject"></style>
+</div>
+
+<!-- ════ MOBILE MENU ════ -->
+<div id="menu-page" class="page">
+  <div class="menu-wrap">
+    <div class="menu-header">
+      <h1 id="menu-title">My Taproom</h1>
+      <div class="tagline" id="menu-tagline">What's on tap</div>
+    </div>
+    <div class="menu-cats" id="menu-cat-filter"></div>
+    <div id="menu-list"></div>
+  </div>
+</div>
+
+<!-- ════ ADMIN PAGE ════ -->
+<div id="admin-page" class="page">
+  <div id="admin-login" style="display:none">
+    <div class="auth-screen">
+      <h2>Admin Login</h2><p>Sign in to manage your taproom</p>
+      <div class="form-group"><label class="form-label">Username</label><input class="form-input" id="login-user" type="text" placeholder="admin"></div>
+      <div class="form-group"><label class="form-label">Password</label><input class="form-input" id="login-pass" type="password"></div>
+      <button class="btn btn-primary" style="width:100%" onclick="doLogin()">Sign In</button>
+      <div id="login-error" style="color:var(--red);font-size:0.82rem;margin-top:0.75rem;display:none"></div>
+    </div>
+  </div>
+  <div id="admin-setup" style="display:none">
+    <div class="auth-screen">
+      <h2>🍺 Welcome!</h2><p>Create your admin account to get started</p>
+      <div class="form-group"><label class="form-label">Username</label><input class="form-input" id="setup-user" type="text" placeholder="admin"></div>
+      <div class="form-group"><label class="form-label">Password</label><input class="form-input" id="setup-pass" type="password" placeholder="Min 6 characters"></div>
+      <button class="btn btn-primary" style="width:100%" onclick="doSetup()">Create Account</button>
+    </div>
+  </div>
+  <div id="admin-content" style="display:none">
+    <div class="admin-layout">
+      <aside class="admin-sidebar">
+        <div class="sidebar-label">Taps</div>
+        <button class="sidebar-btn active" id="sb-taps" onclick="showPanel('taps')"><span class="icon">🍺</span> All Taps</button>
+        <button class="sidebar-btn" id="sb-add" onclick="openDrawer()"><span class="icon">➕</span> Add Tap</button>
+        <div class="sidebar-label" style="margin-top:0.5rem">App</div>
+        <button class="sidebar-btn" id="sb-settings" onclick="showPanel('settings')"><span class="icon">⚙️</span> Settings</button>
+        <button class="sidebar-btn" id="sb-integrations" onclick="showPanel('integrations')"><span class="icon">🔌</span> Integrations</button>
+        <button class="sidebar-btn" id="sb-account" onclick="showPanel('account')"><span class="icon">👤</span> Account</button>
+        <div style="padding:0.875rem;margin-top:1rem">
+          <button class="btn btn-secondary btn-sm" style="width:100%" onclick="doLogout()">Sign Out</button>
+        </div>
+      </aside>
+      <main class="admin-main">
+
+        <!-- Taps Panel -->
+        <div class="admin-panel active" id="panel-taps">
+          <div class="admin-panel-header">
+            <div class="panel-title">Draft List</div>
+            <button class="btn btn-primary" onclick="openDrawer()">+ Add Tap</button>
+          </div>
+          <div class="taps-table-wrap">
+            <table>
+              <thead><tr>
+                <th>Tap</th><th>Beverage</th><th>Style</th><th>ABV</th><th>Serve / Glass</th><th>On Tap</th><th>Batch #</th><th>Last Synced</th><th>Keg</th><th>Status</th><th style="text-align:right">Edit</th>
+              </tr></thead>
+              <tbody id="admin-taps-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Settings Panel -->
+        <div class="admin-panel" id="panel-settings">
+          <div class="admin-panel-header"><div class="panel-title">Settings</div></div>
+          <div class="settings-card">
+            <h3>Identity</h3>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Brewery / Business Name <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-dim)">(browser tab)</span></label>
+                <input class="form-input" id="s-brewery-name" type="text" placeholder="e.g. Sunset Brewing Co.">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Display / Establishment Name <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-dim)">(shown on screen)</span></label>
+                <input class="form-input" id="s-establishment-name" type="text" placeholder="e.g. The Taproom at Sunset">
+              </div>
+            </div>
+            <div class="form-group"><label class="form-label">Tagline</label><input class="form-input" id="s-tagline" type="text" placeholder="What's on tap"></div>
+          </div>
+          <div class="settings-card">
+            <h3>Display</h3>
+            <div class="form-row" style="margin-bottom:0.875rem">
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">Default Layout</label>
+                <select class="form-select" id="s-layout">
+                  <option value="grid">Grid — compact cards</option>
+                  <option value="large">Large Cards</option>
+                  <option value="list">List — single column</option>
+                </select>
+              </div>
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">Accent Color</label>
+                <div style="display:flex;gap:0.5rem;align-items:center">
+                  <input type="color" id="s-accent-picker" style="width:38px;height:38px;border:1px solid var(--border);border-radius:6px;background:none;cursor:pointer;padding:2px;flex-shrink:0">
+                  <input class="form-input" id="s-accent" type="text" placeholder="#f59e0b" style="flex:1;font-family:var(--font-mono);font-size:0.82rem">
+                </div>
+              </div>
+            </div>
+            <div class="form-group" style="margin-bottom:0">
+              <label class="form-label">Logo</label>
+              <div style="display:flex;gap:0.5rem;margin-bottom:0.5rem">
+                <button type="button" class="btn btn-secondary btn-sm" id="logo-tab-url" onclick="setLogoTab('url')" style="border-color:var(--accent);color:var(--accent)">URL</button>
+                <button type="button" class="btn btn-secondary btn-sm" id="logo-tab-upload" onclick="setLogoTab('upload')">Upload File</button>
+              </div>
+              <div id="logo-url-panel">
+                <input class="form-input" id="s-logo" type="url" placeholder="https://...">
+              </div>
+              <div id="logo-upload-panel" style="display:none">
+                <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap">
+                  <label style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.5rem 0.875rem;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;font-size:0.84rem;transition:border-color 0.15s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+                    📁 Choose image…
+                    <input type="file" id="s-logo-file" accept="image/*" style="display:none" onchange="previewLogoFile(this)">
+                  </label>
+                  <span id="logo-file-name" style="font-size:0.78rem;color:var(--text-muted)">PNG, JPG, GIF, SVG, WebP — max 2MB</span>
+                </div>
+                <div id="logo-preview-wrap" style="display:none;margin-top:0.625rem;display:flex;align-items:center;gap:0.75rem">
+                  <img id="logo-preview-img" style="height:48px;max-width:160px;object-fit:contain;border-radius:6px;border:1px solid var(--border);background:var(--surface2);padding:4px">
+                  <button type="button" class="btn btn-danger btn-sm" onclick="clearLogoFile()">Remove</button>
+                </div>
+              </div>
+              <div id="logo-current-wrap" style="margin-top:0.5rem;display:none;align-items:center;gap:0.5rem">
+                <img id="logo-current-img" style="height:36px;max-width:120px;object-fit:contain;border-radius:4px;border:1px solid var(--border);background:var(--surface2);padding:3px">
+                <span style="font-size:0.72rem;color:var(--text-dim)">Current logo</span>
+                <button type="button" class="btn btn-danger btn-sm" onclick="removeLogo()">✕ Remove</button>
+              </div>
+            </div>
+            <div class="toggle-row" style="border-bottom:none;margin-top:0.875rem">
+              <span class="toggle-label">Use logo instead of brewery name</span>
+              <label class="toggle"><input type="checkbox" id="s-use-logo-as-brand"><span class="toggle-slider"></span></label>
+            </div>
+            <div style="font-size:0.72rem;color:var(--text-dim);margin-top:0.2rem">Applies to the nav bar and the display page header. If no logo is uploaded, nothing shows in its place.</div>
+          </div>
+          <div class="settings-card">
+            <h3>Visibility</h3>
+            <div style="font:400 0.72rem var(--font-mono);color:var(--text-dim);margin-bottom:0.75rem;text-transform:uppercase;letter-spacing:0.06em">Toggle fields shown on tap cards</div>
+            <div class="toggle-row"><span class="toggle-label">ABV</span><label class="toggle"><input type="checkbox" id="s-show-abv"><span class="toggle-slider"></span></label></div>
+            <div class="toggle-row"><span class="toggle-label">IBU</span><label class="toggle"><input type="checkbox" id="s-show-ibu"><span class="toggle-slider"></span></label></div>
+            <div class="toggle-row"><span class="toggle-label">Price</span><label class="toggle"><input type="checkbox" id="s-show-price"><span class="toggle-slider"></span></label></div>
+            <div class="toggle-row"><span class="toggle-label">Keg Level</span><label class="toggle"><input type="checkbox" id="s-show-keg"><span class="toggle-slider"></span></label></div>
+            <div class="toggle-row"><span class="toggle-label">Style</span><label class="toggle"><input type="checkbox" id="s-show-style"><span class="toggle-slider"></span></label></div>
+            <div class="toggle-row"><span class="toggle-label">Producer / Brewery</span><label class="toggle"><input type="checkbox" id="s-show-producer"><span class="toggle-slider"></span></label></div>
+            <div class="toggle-row"><span class="toggle-label">Category</span><label class="toggle"><input type="checkbox" id="s-show-category"><span class="toggle-slider"></span></label></div>
+            <div class="toggle-row"><span class="toggle-label">Serve Method</span><label class="toggle"><input type="checkbox" id="s-show-serve-method"><span class="toggle-slider"></span></label></div>
+            <div class="toggle-row"><span class="toggle-label">Glassware</span><label class="toggle"><input type="checkbox" id="s-show-glassware"><span class="toggle-slider"></span></label></div>
+            <div class="toggle-row"><span class="toggle-label">Tasting Notes</span><label class="toggle"><input type="checkbox" id="s-show-tasting-notes"><span class="toggle-slider"></span></label></div>
+            <div class="toggle-row" style="border-bottom:none"><span class="toggle-label">On Tap Date</span><label class="toggle"><input type="checkbox" id="s-show-on-tap-date"><span class="toggle-slider"></span></label></div>
+          </div>
+          <div class="settings-card">
+            <h3>Pipeline Section</h3>
+            <div class="toggle-row" style="margin-bottom:0.75rem"><span class="toggle-label">Show pipeline section on display</span><label class="toggle"><input type="checkbox" id="s-pipeline-enabled"><span class="toggle-slider"></span></label></div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Section Title</label>
+                <input class="form-input" id="s-pipeline-title" type="text" placeholder="Coming Soon">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Auto-refresh interval <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-dim)">(minutes, 0 = off)</span></label>
+                <input class="form-input" id="s-pipeline-refresh" type="number" min="0" placeholder="0">
+              </div>
+            </div>
+          </div>
+          <div class="settings-card">
+            <h3>Custom CSS</h3>
+            <p class="text-muted text-sm" style="margin-bottom:0.75rem">Injected into the display page only. Target <code style="font-family:var(--font-mono);font-size:0.8rem;background:var(--surface2);padding:0.1rem 0.3rem;border-radius:3px">#pipeline-section</code>, <code style="font-family:var(--font-mono);font-size:0.8rem;background:var(--surface2);padding:0.1rem 0.3rem;border-radius:3px">.tap-grid</code>, <code style="font-family:var(--font-mono);font-size:0.8rem;background:var(--surface2);padding:0.1rem 0.3rem;border-radius:3px">.display-header</code>, etc.</p>
+            <textarea class="form-textarea" id="s-custom-css" style="min-height:120px;font-family:var(--font-mono);font-size:0.8rem" placeholder="/* e.g. */&#10;.display-header { background: #1a0a2e; }&#10;#pipeline-section { border-color: #7c3aed; }"></textarea>
+          </div>
+          <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
+        </div>
+
+        <!-- Integrations Panel -->
+        <div class="admin-panel" id="panel-integrations">
+          <div class="admin-panel-header"><div class="panel-title">Integrations</div></div>
+          <div class="settings-card">
+            <h3>🍺 Brewfather API</h3>
+            <p class="text-muted text-sm" style="margin-bottom:1rem">Enter your credentials from Brewfather → Settings → API.</p>
+            <div class="form-row">
+              <div class="form-group"><label class="form-label">User ID</label><input class="form-input" id="bf-user-id" type="text" placeholder="Your Brewfather User ID"></div>
+              <div class="form-group"><label class="form-label">API Key</label><input class="form-input" id="bf-api-key" type="password" placeholder="Your API Key"></div>
+            </div>
+            <button class="btn btn-primary" onclick="saveBrewfatherCreds()">Save Credentials</button>
+          </div>
+          <div class="settings-card">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem">
+              <div>
+                <h3 style="margin:0">Import Batches</h3>
+                <div style="font-size:0.72rem;color:var(--text-dim);margin-top:0.2rem">Brewfather status is mapped automatically: Fermenting/Conditioning → Coming Soon · Completed → On Tap · Archived → Kicked</div>
+              </div>
+              <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap">
+                <select class="form-select" id="bf-status-filter" style="width:auto;font-size:0.8rem;padding:0.3rem 0.7rem">
+                  <option value="Fermenting,Conditioning,Completed">Fermenting + Conditioning + Completed</option>
+                  <option value="Fermenting">Fermenting only</option>
+                  <option value="Conditioning">Conditioning only</option>
+                  <option value="Completed">Completed only</option>
+                  <option value="Planning,Brewing,Fermenting,Conditioning,Completed">All batches</option>
+                </select>
+                <button class="btn btn-secondary btn-sm" onclick="loadBrewfatherBatches()">🔄 Fetch Batches</button>
+              </div>
+            </div>
+
+            <!-- Bulk action bar (hidden until batches load) -->
+            <div id="bf-bulk-bar" style="display:none;align-items:center;justify-content:space-between;gap:0.75rem;padding:0.6rem 0.875rem;background:var(--surface2);border:1px solid var(--border);border-radius:8px;margin-bottom:0.875rem;flex-wrap:wrap">
+              <div style="display:flex;align-items:center;gap:0.75rem">
+                <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.8rem;cursor:pointer;user-select:none">
+                  <input type="checkbox" id="bf-select-all" onchange="toggleSelectAllBatches(this.checked)" style="width:15px;height:15px;accent-color:var(--accent)">
+                  <span>Select all importable</span>
+                </label>
+                <span id="bf-selected-count" style="font:500 0.72rem var(--font-mono);color:var(--accent)"></span>
+              </div>
+              <button class="btn btn-primary btn-sm" id="bf-bulk-import-btn" onclick="bulkImportSelected()" style="display:none">⬇ Import Selected</button>
+            </div>
+
+            <div id="bf-batches-list"><div style="color:var(--text-dim);font-size:0.875rem;padding:0.75rem 0">Save credentials above, then click "Fetch Batches".</div></div>
+          </div>
+
+          <div class="settings-card">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem">
+              <div>
+                <h3 style="margin:0">Sync History</h3>
+                <div style="font-size:0.72rem;color:var(--text-dim);margin-top:0.2rem">Taps linked to Brewfather batches</div>
+              </div>
+              <button class="btn btn-secondary btn-sm" id="bf-sync-all-btn" onclick="syncAllBrewfather()">🔄 Sync All</button>
+            </div>
+            <div id="bf-sync-history-list"><div style="color:var(--text-dim);font-size:0.875rem;padding:0.5rem 0">No Brewfather-linked taps yet.</div></div>
+          </div>
+          <div class="settings-card">
+            <h3>🍻 Untappd</h3>
+            <p class="text-muted text-sm" style="margin-bottom:0.75rem">Link individual taps to Untappd beer pages in each tap's edit form.</p>
+            <div style="background:var(--accent-dim);border:1px solid rgba(245,158,11,0.25);border-radius:8px;padding:0.75rem;font-size:0.8rem;color:var(--accent)">✓ Per-tap Untappd links supported — add in the tap edit drawer</div>
+          </div>
+          <div class="settings-card">
+            <h3>📱 QR Codes</h3>
+            <p class="text-muted text-sm">Auto-generated per tap. Click any tap on the display to see its QR code.</p>
+          </div>
+        </div>
+
+        <!-- Account Panel -->
+        <div class="admin-panel" id="panel-account">
+          <div class="admin-panel-header"><div class="panel-title">Account</div></div>
+          <div class="settings-card" style="max-width:400px">
+            <h3>Change Password</h3>
+            <div class="form-group"><label class="form-label">Current Password</label><input class="form-input" id="pw-current" type="password"></div>
+            <div class="form-group"><label class="form-label">New Password</label><input class="form-input" id="pw-new" type="password"></div>
+            <div class="form-group"><label class="form-label">Confirm New Password</label><input class="form-input" id="pw-confirm" type="password"></div>
+            <button class="btn btn-primary" onclick="changePassword()">Update Password</button>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+</div>
+
+<!-- ════ TAP MODAL ════ -->
+<div class="modal-overlay" id="tap-modal" onclick="closeModalBg(event)">
+  <div class="modal">
+    <div class="modal-color-band" id="modal-color-band"></div>
+    <div class="modal-header">
+      <div>
+        <div class="modal-tap-label" id="modal-tap-label"></div>
+        <div class="modal-tap-name" id="modal-tap-name"></div>
+        <div class="modal-tap-producer" id="modal-tap-producer"></div>
+      </div>
+      <button class="modal-close" onclick="closeTapModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+  </div>
+</div>
+
+<!-- ════ ADD/EDIT DRAWER ════ -->
+<div class="drawer-overlay" id="drawer-overlay" onclick="closeDrawer()"></div>
+<div class="drawer" id="tap-drawer">
+  <div class="drawer-header">
+    <div class="drawer-title" id="drawer-title">Add Tap</div>
+    <button class="modal-close" onclick="closeDrawer()">✕</button>
+  </div>
+  <div class="drawer-body">
+    <input type="hidden" id="f-id">
+
+    <!-- TAP IDENTITY -->
+    <div style="margin-bottom:0.875rem">
+      <div style="font:600 0.68rem var(--font-mono);color:var(--text-dim);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:0.75rem">Tap Identity</div>
+      <div class="form-row" style="grid-template-columns:90px 1fr;margin-bottom:0.875rem">
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Tap #</label>
+          <input class="form-input" id="f-num" type="number" min="1" placeholder="1">
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Tap Label <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-dim)">(display name)</span></label>
+          <input class="form-input" id="f-tap-label" type="text" placeholder="Tap 1 · Cask 1 · Beer Engine 2 · Nitro Tap…">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Status</label>
+          <select class="form-select" id="f-status">
+            <option value="active">On Tap</option>
+            <option value="coming-soon">Coming Soon</option>
+            <option value="kicked">Kicked / Empty</option>
+            <option value="inactive">Inactive (hidden)</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Date Tapped</label>
+          <input class="form-input" id="f-on-tap-date" type="date">
+        </div>
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <!-- BEVERAGE -->
+    <div style="font:600 0.68rem var(--font-mono);color:var(--text-dim);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:0.75rem">Beverage</div>
+    <div class="form-group">
+      <label class="form-label">Name *</label>
+      <input class="form-input" id="f-name" type="text" placeholder="e.g. Sunset Session IPA">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Producer / Brewery</label>
+        <input class="form-input" id="f-producer" type="text" placeholder="e.g. Home Brewed">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Category</label>
+        <select class="form-select" id="f-category">
+          <option value="beer">🍺 Beer</option>
+          <option value="craft-beer">🍻 Craft Beer</option>
+          <option value="ipa">🌿 IPA</option>
+          <option value="lager">🥂 Lager</option>
+          <option value="stout">🖤 Stout / Porter</option>
+          <option value="sour">🍋 Sour / Wild</option>
+          <option value="wheat">🌾 Wheat / Hefe</option>
+          <option value="mead">🍯 Mead</option>
+          <option value="cider">🍎 Cider</option>
+          <option value="seltzer">💧 Seltzer</option>
+          <option value="wine">🍷 Wine</option>
+          <option value="cocktail">🍹 Cocktail</option>
+          <option value="spirit">🥃 Spirit</option>
+          <option value="kombucha">🫖 Kombucha</option>
+          <option value="cold-brew">☕ Cold Brew</option>
+          <option value="nitro-coffee">☕ Nitro Coffee</option>
+          <option value="other">✨ Other</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Style</label>
+      <input class="form-input" id="f-style" type="text" placeholder="e.g. West Coast IPA, Traditional Mead, Dry Rosé…">
+    </div>
+    <div class="form-row-3">
+      <div class="form-group"><label class="form-label">ABV %</label><input class="form-input" id="f-abv" type="number" step="0.1" min="0" placeholder="5.2"></div>
+      <div class="form-group"><label class="form-label">IBU</label><input class="form-input" id="f-ibu" type="number" min="0" placeholder="42"></div>
+      <div class="form-group"><label class="form-label">Price</label><input class="form-input" id="f-price" type="text" placeholder="$6"></div>
+    </div>
+    <div class="form-group"><label class="form-label">Description</label><textarea class="form-textarea" id="f-desc" placeholder="The story of this pour…"></textarea></div>
+    <div class="form-group"><label class="form-label">Tasting Notes</label><textarea class="form-textarea" id="f-notes" placeholder="Aromas, flavors, finish…" style="min-height:60px"></textarea></div>
+
+    <hr class="divider">
+
+    <!-- SERVING -->
+    <div style="font:600 0.68rem var(--font-mono);color:var(--text-dim);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:0.75rem">Serving</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Serve Method</label>
+        <select class="form-select" id="f-serve-method">
+          <option value="">— Not specified —</option>
+          <optgroup label="Draft">
+            <option value="Draft">Draft</option>
+            <option value="Nitro">Nitro</option>
+            <option value="Side Pour">Side Pour</option>
+          </optgroup>
+          <optgroup label="Cask / Traditional">
+            <option value="Cask">Cask</option>
+            <option value="Beer Engine">Beer Engine</option>
+            <option value="Gravity">Gravity</option>
+          </optgroup>
+          <optgroup label="Packaged">
+            <option value="Bottle">Bottle</option>
+            <option value="Can">Can</option>
+            <option value="Crowler">Crowler</option>
+            <option value="Growler">Growler</option>
+          </optgroup>
+          <optgroup label="Other">
+            <option value="On Ice">On Ice</option>
+            <option value="Cocktail Tap">Cocktail Tap</option>
+          </optgroup>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Glassware</label>
+        <select class="form-select" id="f-glassware">
+          <option value="">— Not specified —</option>
+          <optgroup label="Pint &amp; Standard">
+            <option value="Pint Glass">Pint Glass (16oz)</option>
+            <option value="Imperial Pint">Imperial Pint (20oz)</option>
+            <option value="Nonic Pint">Nonic Pint</option>
+            <option value="Mug / Stein">Mug / Stein</option>
+          </optgroup>
+          <optgroup label="Specialty Beer">
+            <option value="Pilsner Glass">Pilsner Glass</option>
+            <option value="Weizen Glass">Weizen Glass</option>
+            <option value="Tulip">Tulip</option>
+            <option value="Stemmed Tulip">Stemmed Tulip</option>
+            <option value="Teku">Teku</option>
+            <option value="Snifter">Snifter</option>
+            <option value="Goblet / Chalice">Goblet / Chalice</option>
+            <option value="Stange">Stange</option>
+          </optgroup>
+          <optgroup label="Wine &amp; Spirits">
+            <option value="Wine Glass">Wine Glass</option>
+            <option value="Coupe">Coupe</option>
+            <option value="Rocks Glass">Rocks Glass</option>
+            <option value="Collins Glass">Collins Glass</option>
+            <option value="Shot Glass">Shot Glass</option>
+          </optgroup>
+          <optgroup label="Tasting">
+            <option value="Tasting Glass (4oz)">Tasting Glass (4oz)</option>
+            <option value="Snifter (small)">Snifter (small)</option>
+          </optgroup>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Serving Size</label><input class="form-input" id="f-serving" type="text" placeholder="16oz / pint / 568ml"></div>
+      <div class="form-group">
+        <label class="form-label">Beer Color (hex or SRM)</label>
+        <input class="form-input" id="f-color" type="text" placeholder="#f59e0b">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Keg Level — <span id="keg-pct-label">100%</span></label>
+      <div class="keg-slider-wrap">
+        <input type="range" id="f-keg" min="0" max="100" value="100" oninput="document.getElementById('keg-pct-label').textContent=this.value+'%'">
+        <span class="keg-pct-val" id="keg-pct-val">100%</span>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Beer Image</label>
+      <div style="display:flex;gap:0.5rem;margin-bottom:0.5rem">
+        <button type="button" class="btn btn-secondary btn-sm" id="image-tab-url" onclick="setImageTab('url')" style="border-color:var(--accent);color:var(--accent)">URL</button>
+        <button type="button" class="btn btn-secondary btn-sm" id="image-tab-upload" onclick="setImageTab('upload')">Upload File</button>
+      </div>
+      <div id="image-url-panel">
+        <input class="form-input" id="f-image" type="url" placeholder="https://...">
+      </div>
+      <div id="image-upload-panel" style="display:none">
+        <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap">
+          <label style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.5rem 0.875rem;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;font-size:0.84rem;transition:border-color 0.15s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+            📁 Choose image…
+            <input type="file" id="f-image-file" accept="image/*" style="display:none" onchange="previewTapImageFile(this)">
+          </label>
+          <span id="image-file-name" style="font-size:0.78rem;color:var(--text-muted)">PNG, JPG, GIF, SVG, WebP — max 2MB</span>
+        </div>
+        <div id="image-preview-wrap" style="display:none;margin-top:0.625rem;display:flex;align-items:center;gap:0.75rem">
+          <img id="image-preview-img" style="height:48px;max-width:160px;object-fit:contain;border-radius:6px;border:1px solid var(--border);background:var(--surface2);padding:4px">
+          <button type="button" class="btn btn-danger btn-sm" onclick="clearTapImageFile()">Remove</button>
+        </div>
+      </div>
+      <div id="image-current-wrap" style="margin-top:0.5rem;display:none;align-items:center;gap:0.5rem">
+        <img id="image-current-img" style="height:36px;max-width:120px;object-fit:contain;border-radius:4px;border:1px solid var(--border);background:var(--surface2);padding:3px">
+        <span style="font-size:0.72rem;color:var(--text-dim)">Current image</span>
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <!-- LINKS -->
+    <div style="font:600 0.68rem var(--font-mono);color:var(--text-dim);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:0.75rem">Links &amp; Integrations</div>
+    <div class="form-group"><label class="form-label">🍻 Untappd URL</label><input class="form-input" id="f-untappd" type="url" placeholder="https://untappd.com/b/..."></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Brewfather Batch ID</label><input class="form-input" id="f-brewfather" type="text" placeholder="Batch ID"></div>
+      <div class="form-group"><label class="form-label">Brewer's Friend Recipe ID</label><input class="form-input" id="f-brewersfriend" type="text" placeholder="Recipe ID"></div>
+    </div>
+    <div class="form-group"><label class="form-label">Grainfather Recipe ID</label><input class="form-input" id="f-grainfather" type="text" placeholder="Recipe ID"></div>
+  </div>
+  <div class="drawer-footer">
+    <button class="btn btn-danger btn-sm" id="drawer-delete-btn" style="display:none;margin-right:auto" onclick="deleteTap()">Delete</button>
+    <button class="btn btn-secondary" onclick="closeDrawer()">Cancel</button>
+    <button class="btn btn-primary" onclick="saveTap()">Save Tap</button>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════ STATE ════════════════════════════════
+let state = {
+  taps: [], settings: {},
+  menuFilter: 'all',
+  currentLayout: 'grid',
+  authenticated: false, editingId: null,
+};
+
+// ════════════════════════════════ API ════════════════════════════════
+async function api(method, path, body) {
+  const opts = { method, headers: {'Content-Type': 'application/json'} };
+  if (body !== undefined) opts.body = JSON.stringify(body);
+  const r = await fetch('/api' + path, opts);
+  const data = await r.json();
+  if (!r.ok) throw new Error(data.error || 'Request failed');
+  return data;
+}
+
+// ════════════════════════════════ INIT ════════════════════════════════
+async function init() {
+  await loadSettings();
+  await loadTaps();
+  const auth = await api('GET', '/auth/me').catch(() => ({authenticated: false}));
+  state.authenticated = auth.authenticated;
+  const route = location.pathname.replace(/^\//, '') || 'display';
+  if (route.startsWith('tap/')) { navigate('display'); setTimeout(() => openTapModal(route.split('/')[1]), 300); }
+  else navigate(['admin','menu'].includes(route) ? route : 'display');
+}
+
+async function loadSettings() {
+  try { const s = await api('GET', '/auth/settings'); state.settings = s; applySettings(s); } catch(e) {}
+}
+
+function applySettings(s) {
+  const breweryName = s.brewery_name || s.taproom_name || 'CellarMenu Pro';
+  const displayName = s.establishment_name || breweryName;
+  const useLogoAsBrand = s.use_logo_as_brand === '1';
+  const hasLogo = !!s.logo_url;
+
+  document.title = breweryName ? `${breweryName} — Draft List` : 'CellarMenu Pro';
+
+  // Top nav brand: mini logo replaces the beer-glass icon whenever a logo is set.
+  // When "use logo instead of name" is on, only the logo shows (nothing if none uploaded).
+  const navIcon = document.getElementById('nav-brand-icon');
+  const navLogo = document.getElementById('nav-brand-logo');
+  const navName = document.getElementById('nav-brand-name');
+  if (useLogoAsBrand) {
+    navIcon.style.display = 'none';
+    navName.style.display = 'none';
+    navLogo.style.display = hasLogo ? '' : 'none';
+    if (hasLogo) navLogo.src = s.logo_url;
+  } else {
+    navName.style.display = '';
+    navName.textContent = breweryName;
+    navIcon.style.display = hasLogo ? 'none' : '';
+    navLogo.style.display = hasLogo ? '' : 'none';
+    if (hasLogo) navLogo.src = s.logo_url;
+  }
+
+  // Display page header: collapses entirely when there's nothing to show;
+  // "use logo instead of name" replaces the title text with a centered logo.
+  const header = document.querySelector('.display-header');
+  const titleEl = document.getElementById('display-title');
+  const taglineEl = document.getElementById('display-tagline');
+  const logoEl = document.getElementById('display-logo');
+  const hasEstablishmentName = !!(s.establishment_name && s.establishment_name.trim());
+  const hasTagline = !!(s.tagline && s.tagline.trim());
+  const showLogoAsBrand = useLogoAsBrand && hasLogo;
+  const headerHasContent = hasEstablishmentName || hasTagline || showLogoAsBrand;
+
+  header.classList.toggle('hidden', !headerHasContent);
+  header.classList.toggle('logo-as-brand', showLogoAsBrand);
+
+  if (showLogoAsBrand) {
+    titleEl.style.display = 'none';
+    logoEl.src = s.logo_url; logoEl.style.display = 'block';
+  } else {
+    titleEl.style.display = '';
+    titleEl.textContent = displayName;
+    logoEl.style.display = hasLogo ? 'block' : 'none';
+    if (hasLogo) logoEl.src = s.logo_url;
+  }
+  taglineEl.textContent = s.tagline || '';
+  taglineEl.style.display = hasTagline ? '' : 'none';
+
+  document.getElementById('menu-title').textContent = displayName;
+  document.getElementById('menu-tagline').textContent = s.tagline || "What's on tap";
+
+  if (s.accent_color) {
+    document.documentElement.style.setProperty('--accent', s.accent_color);
+    document.documentElement.style.setProperty('--accent-dim', hexToRgba(s.accent_color, 0.12));
+  }
+
+  // Custom CSS injection
+  const cssEl = document.getElementById('custom-css-inject');
+  if (cssEl) cssEl.textContent = s.custom_css || '';
+
+  if (s.display_layout) state.currentLayout = s.display_layout;
+
+  schedulePipelineRefresh();
+}
+
+async function loadTaps() {
+  try {
+    state.taps = await api('GET', '/taps');
+    renderDisplay();
+    renderMobileMenu();
+    if (state.authenticated) renderAdminTable();
+  } catch(e) {}
+}
+
+function navigate(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(page + '-page')?.classList.add('active');
+  document.getElementById('nav-' + page)?.classList.add('active');
+  if (page === 'admin') showAdminView();
+  history.replaceState({}, '', page === 'display' ? '/' : '/' + page);
+}
+function toggleNavPanel() {
+  document.getElementById('nav-panel').classList.toggle('open');
+  document.getElementById('nav-panel-overlay').classList.toggle('open');
+}
+function closeNavPanel() {
+  document.getElementById('nav-panel').classList.remove('open');
+  document.getElementById('nav-panel-overlay').classList.remove('open');
+}
+
+// ════════════════════════════════ HELPERS ════════════════════════════════
+function hexToRgba(hex, a) {
+  const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+  return `rgba(${r},${g},${b},${a})`;
+}
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function kegCol(l) { return l > 50 ? '#22c55e' : l > 20 ? '#f59e0b' : '#ef4444'; }
+function statusClass(s) { return s === 'active' ? 'active' : s === 'coming-soon' ? 'coming-soon' : 'kicked'; }
+function statusLabel(s) { return s === 'active' ? 'On Tap' : s === 'coming-soon' ? 'Coming Soon' : s; }
+function statusChipLabel(s) { return s === 'coming-soon' ? 'Soon' : s === 'active' ? 'On Tap' : s; }
+function categoryLabel(cat) {
+  const map = {'beer':'🍺 Beer','craft-beer':'🍻 Craft','ipa':'🌿 IPA','lager':'🥂 Lager','stout':'🖤 Stout','sour':'🍋 Sour','wheat':'🌾 Wheat','mead':'🍯 Mead','cider':'🍎 Cider','seltzer':'💧 Seltzer','wine':'🍷 Wine','cocktail':'🍹 Cocktail','spirit':'🥃 Spirit','kombucha':'🫖 Kombucha','cold-brew':'☕ Cold Brew','nitro-coffee':'☕ Nitro','other':'✨ Other'};
+  return map[cat] || cat;
+}
+function serveIcon(m) {
+  const map = {'Draft':'🍺','Nitro':'💧','Cask':'🪣','Beer Engine':'⚙️','Side Pour':'↗️','Gravity':'⬇️','Bottle':'🍾','Can':'🥤','Crowler':'🥤','Growler':'🫙','On Ice':'🧊','Cocktail Tap':'🍹'};
+  return map[m] || '🍺';
+}
+function glassIcon(g) {
+  const map = {'Pint Glass':'🥛','Imperial Pint':'🍺','Nonic Pint':'🍺','Mug / Stein':'🍺','Pilsner Glass':'🥂','Weizen Glass':'🌾','Tulip':'🌷','Stemmed Tulip':'🌷','Teku':'🍷','Snifter':'🥃','Goblet / Chalice':'🏆','Wine Glass':'🍷','Coupe':'🥂','Rocks Glass':'🥃','Collins Glass':'🥤','Tasting Glass (4oz)':'🔬','Snifter (small)':'🥃'};
+  return map[g] || '🥛';
+}
+function tapLabel(t) {
+  if (t.tap_label) return esc(t.tap_label);
+  if (t.tap_number) return `Tap ${t.tap_number}`;
+  return '';
+}
+function formatDate(d) {
+  if (!d) return null;
+  return new Date(d + 'T12:00:00').toLocaleDateString(undefined, {month:'short', day:'numeric', year:'numeric'});
+}
+
+// ════════════════════════════════ DISPLAY RENDER ════════════════════════════════
+function renderDisplay() {
+  const s = state.settings;
+  // Active taps only — coming-soon and kicked go to pipeline, inactive hidden entirely
+  const activeTaps = state.taps.filter(t => t.status === 'active');
+  const grid = document.getElementById('display-grid');
+  grid.className = `tap-grid layout-${state.currentLayout}`;
+  if (!activeTaps.length) {
+    grid.innerHTML = '<div class="empty-state">No taps currently active.</div>';
+  } else {
+    grid.innerHTML = activeTaps.map(t =>
+      state.currentLayout === 'large' ? largeCardHTML(t, s) :
+      state.currentLayout === 'list'  ? listCardHTML(t, s) :
+      gridCardHTML(t, s)
+    ).join('');
+  }
+  renderPipeline();
+}
+
+function renderPipeline() {
+  const s = state.settings;
+  const section = document.getElementById('pipeline-section');
+  const enabled = s.pipeline_enabled !== '0';
+
+  // Pipeline = coming-soon taps (kicked/archived are hidden entirely)
+  const pipeline = state.taps.filter(t => t.status === 'coming-soon');
+
+  if (!enabled || !pipeline.length) {
+    section.classList.add('hidden');
+    return;
+  }
+
+  section.classList.remove('hidden');
+  document.getElementById('pipeline-title').textContent = s.pipeline_title || 'Coming Soon';
+  document.getElementById('pipeline-count').textContent = pipeline.length;
+
+  document.getElementById('pipeline-row').innerHTML = pipeline.map(t => {
+    const col = t.color || 'var(--accent)';
+    // Derive a readable status label
+    const statusLabel = t.brewfather_id ? 'Fermenting' : 'Coming Soon';
+
+    // Fermentation progress — only if we have OG + current gravity data
+    let progressBar = '';
+    if (t._ferment_pct != null) {
+      const pct = Math.min(100, Math.max(0, Math.round(t._ferment_pct)));
+      progressBar = `<div class="pipeline-chip-bar"><div class="pipeline-chip-bar-fill" style="width:${pct}%"></div></div>`;
+    }
+
+    const meta = [t.style, t.abv ? t.abv + '%' : null].filter(Boolean).join(' · ');
+    return `<div class="pipeline-chip">
+      <div class="pipeline-chip-dot" style="background:${col}"></div>
+      <div>
+        <div class="pipeline-chip-name">${esc(t.name)}</div>
+        ${meta ? `<div class="pipeline-chip-meta">${esc(meta)}</div>` : ''}
+      </div>
+      ${progressBar}
+      <span class="pipeline-chip-status">${esc(statusLabel)}</span>
+    </div>`;
+  }).join('');
+}
+
+// ── Pipeline auto-refresh ──
+let _pipelineRefreshTimer = null;
+function schedulePipelineRefresh() {
+  if (_pipelineRefreshTimer) { clearInterval(_pipelineRefreshTimer); _pipelineRefreshTimer = null; }
+  const mins = parseFloat(state.settings.pipeline_refresh_mins) || 0;
+  if (mins <= 0) return;
+  _pipelineRefreshTimer = setInterval(async () => {
+    // Full sync of all Brewfather-linked coming-soon taps, then re-render
+    const linked = state.taps.filter(t => t.status === 'coming-soon' && t.brewfather_id);
+    if (linked.length) {
+      try { await api('POST', '/brewfather/sync-all', {}); await loadTaps(); renderDisplay(); } catch(e) {}
+    }
+  }, mins * 60 * 1000);
+}
+
+function setLayout(l) { state.currentLayout = l; renderDisplay(); }
+
+// ── Compact grid card ──
+function gridCardHTML(t, s) {
+  const col = t.color || 'var(--accent)';
+  const kg = kegCol(t.keg_level);
+  const showAbv = s.show_abv !== '0', showIbu = s.show_ibu !== '0';
+  const showKeg = s.show_keg_level !== '0', showPrice = s.show_price === '1';
+  const showStyle = s.show_style !== '0', showProducer = s.show_producer !== '0';
+  const showCat = s.show_category !== '0', showServe = s.show_serve_method !== '0';
+  const lbl = tapLabel(t);
+  return `<div class="tap-card" style="--c:${col}" onclick="openTapModal('${t.id}')">
+    <div style="display:flex;align-items:flex-start;gap:0.75rem;margin-bottom:0.6rem;padding-left:0.75rem">
+      ${t.tap_number ? `<div style="font-family:var(--font-display);font-size:2.2rem;color:var(--text-dim);line-height:1;min-width:2rem;flex-shrink:0">${t.tap_number}</div>` : ''}
+      <div style="flex:1;min-width:0">
+        ${lbl ? `<div style="font:500 0.62rem var(--font-mono);color:var(--text-dim);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:0.2rem">${lbl}</div>` : ''}
+        <div style="font-size:1.05rem;font-weight:700;line-height:1.25">${esc(t.name)}</div>
+        ${showProducer && t.producer ? `<div style="font-size:0.78rem;color:var(--text-muted);margin-top:0.1rem">${esc(t.producer)}</div>` : ''}
+      </div>
+      <span class="tap-status-badge ${statusClass(t.status)}">${statusChipLabel(t.status)}</span>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:0.3rem;margin-bottom:${showKeg?'0.55rem':'0'};padding-left:0.75rem">
+      ${showStyle && t.style ? `<span class="badge">${esc(t.style)}</span>` : ''}
+      ${showCat ? `<span class="badge cat">${categoryLabel(t.category)}</span>` : ''}
+      ${showAbv && t.abv ? `<span class="badge abv">${t.abv}%</span>` : ''}
+      ${showIbu && t.ibu ? `<span class="badge ibu">${t.ibu} IBU</span>` : ''}
+      ${showServe && t.serve_method && t.status === 'active' ? `<span class="badge serve">${serveIcon(t.serve_method)} ${esc(t.serve_method)}</span>` : ''}
+      ${showPrice && t.price ? `<span class="badge">${esc(t.price)}</span>` : ''}
+    </div>
+    ${showKeg ? `<div class="keg-bar-wrap" style="padding-left:0.75rem"><div class="keg-bar-track"><div class="keg-bar-fill" style="width:${t.keg_level}%;background:${kg}"></div></div><span class="keg-label">${t.keg_level}%</span></div>` : ''}
+  </div>`;
+}
+
+// ── Large card ──
+function largeCardHTML(t, s) {
+  const col = t.color || 'var(--accent)';
+  const kg = kegCol(t.keg_level);
+  const showAbv = s.show_abv !== '0', showIbu = s.show_ibu !== '0';
+  const showKeg = s.show_keg_level !== '0', showPrice = s.show_price === '1';
+  const showStyle = s.show_style !== '0', showProducer = s.show_producer !== '0';
+  const showServe = s.show_serve_method !== '0', showGlass = s.show_glassware !== '0';
+  const showNotes = s.show_tasting_notes !== '0', showDate = s.show_on_tap_date !== '0';
+  const lbl = tapLabel(t);
+  const dateStr = showDate && t.on_tap_date ? formatDate(t.on_tap_date) : null;
+
+  const stats = [];
+  if (showAbv && t.abv) stats.push({v:`${t.abv}%`, l:'ABV'});
+  if (showIbu && t.ibu) stats.push({v:t.ibu, l:'IBU'});
+  if (showPrice && t.price) stats.push({v:esc(t.price), l:'Price'});
+  if (t.serving_size) stats.push({v:esc(t.serving_size), l:'Serving'});
+
+  return `<div class="tap-card" style="--c:${col}" onclick="openTapModal('${t.id}')">
+    <div class="tap-card-color-bar" style="background:${col}"></div>
+    <div class="tap-card-large-inner">
+      <div class="tap-card-large-header">
+        <div class="tap-card-large-meta">
+          ${lbl ? `<div class="tap-label-line">${lbl}</div>` : ''}
+          <div class="tap-name-lg">${esc(t.name)}</div>
+          ${showProducer && t.producer ? `<div class="tap-producer-lg">${esc(t.producer)}</div>` : ''}
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.5rem;flex-shrink:0">
+          <span class="tap-status-badge ${statusClass(t.status)}">${statusChipLabel(t.status)}</span>
+          ${t.image_url ? `<img src="${esc(t.image_url)}" style="width:54px;height:54px;object-fit:cover;border-radius:8px;border:1px solid var(--border)" onerror="this.style.display='none'">` : ''}
+        </div>
+      </div>
+      ${showStyle && t.style ? `<div class="tap-style-lg">${esc(t.style)}</div>` : ''}
+      ${showNotes && t.tasting_notes ? `<div class="tap-notes-lg">"${esc(t.tasting_notes.length > 150 ? t.tasting_notes.slice(0,150) + '…' : t.tasting_notes)}"</div>` : ''}
+      ${stats.length ? `<div class="tap-stats-row">${stats.map(st => `<div class="tap-stat"><div class="tap-stat-val">${st.v}</div><div class="tap-stat-lbl">${st.l}</div></div>`).join('')}</div>` : ''}
+      <div class="tap-card-large-footer">
+        <div class="serve-row">
+          ${showServe && t.serve_method && t.status === 'active' ? `<span class="serve-chip">${serveIcon(t.serve_method)} ${esc(t.serve_method)}</span>` : ''}
+          ${showGlass && t.glassware && t.status === 'active' ? `<span class="serve-chip">${glassIcon(t.glassware)} ${esc(t.glassware)}</span>` : ''}
+          ${dateStr ? `<span class="on-tap-date">On tap ${dateStr}</span>` : ''}
+        </div>
+        ${showKeg ? `<div class="keg-bar-wrap" style="flex-shrink:0;gap:0.4rem"><div class="keg-bar-track" style="width:60px"><div class="keg-bar-fill" style="width:${t.keg_level}%;background:${kg}"></div></div><span class="keg-label">${t.keg_level}%</span></div>` : ''}
+      </div>
+    </div>
+  </div>`;
+}
+
+// ── List card ──
+function listCardHTML(t, s) {
+  const col = t.color || 'var(--accent)';
+  const kg = kegCol(t.keg_level);
+  const showAbv = s.show_abv !== '0', showIbu = s.show_ibu !== '0';
+  const showKeg = s.show_keg_level !== '0', showPrice = s.show_price === '1';
+  const showStyle = s.show_style !== '0', showProducer = s.show_producer !== '0';
+  const showServe = s.show_serve_method !== '0', showGlass = s.show_glassware !== '0';
+  const showDate = s.show_on_tap_date !== '0';
+  const lbl = tapLabel(t);
+  const dateStr = showDate && t.on_tap_date ? formatDate(t.on_tap_date) : null;
+  return `<div class="tap-card" style="--c:${col}" onclick="openTapModal('${t.id}')">
+    <div class="list-color-strip" style="background:${col}"></div>
+    <div class="list-body">
+      ${lbl ? `<div class="list-label">${lbl}</div>` : ''}
+      <div class="list-name">${esc(t.name)}</div>
+      <div class="list-sub">${[showProducer && t.producer, showStyle && t.style].filter(Boolean).map(v => esc(v)).join(' · ')}</div>
+      <div class="list-badges">
+        ${showAbv && t.abv ? `<span class="badge abv">${t.abv}%</span>` : ''}
+        ${showIbu && t.ibu ? `<span class="badge ibu">${t.ibu} IBU</span>` : ''}
+        ${showServe && t.serve_method && t.status === 'active' ? `<span class="badge serve">${serveIcon(t.serve_method)} ${esc(t.serve_method)}</span>` : ''}
+        ${showGlass && t.glassware && t.status === 'active' ? `<span class="badge">${glassIcon(t.glassware)} ${esc(t.glassware)}</span>` : ''}
+        ${showPrice && t.price ? `<span class="badge">${esc(t.price)}</span>` : ''}
+        ${dateStr ? `<span class="badge" style="color:var(--text-dim)">On tap ${dateStr}</span>` : ''}
+      </div>
+    </div>
+    <div class="list-right">
+      <span class="tap-status-badge ${statusClass(t.status)}">${statusChipLabel(t.status)}</span>
+      ${showKeg ? `<div class="keg-bar-wrap"><div class="keg-bar-track" style="width:56px"><div class="keg-bar-fill" style="width:${t.keg_level}%;background:${kg}"></div></div><span class="keg-label">${t.keg_level}%</span></div>` : ''}
+    </div>
+  </div>`;
+}
+
+// ════════════════════════════════ MOBILE MENU ════════════════════════════════
+function renderMobileMenu() {
+  const s = state.settings;
+  const taps = state.taps.filter(t => t.status === 'active');
+  const cats = [...new Set(taps.map(t => t.category))];
+  document.getElementById('menu-cat-filter').innerHTML =
+    `<button class="cat-btn ${state.menuFilter==='all'?'active':''}" onclick="setMenuFilter('all')">All</button>` +
+    cats.map(c => `<button class="cat-btn ${state.menuFilter===c?'active':''}" onclick="setMenuFilter('${c}')">${categoryLabel(c)}</button>`).join('');
+
+  const filtered = state.menuFilter === 'all' ? taps : taps.filter(t => t.category === state.menuFilter);
+  const list = document.getElementById('menu-list');
+  if (!filtered.length) { list.innerHTML = '<div style="text-align:center;color:var(--text-dim);padding:2rem 0">No taps active.</div>'; return; }
+  const showAbv = s.show_abv !== '0', showIbu = s.show_ibu !== '0', showKeg = s.show_keg_level !== '0', showPrice = s.show_price === '1';
+  const showStyle = s.show_style !== '0', showProducer = s.show_producer !== '0';
+  const showServe = s.show_serve_method !== '0', showGlass = s.show_glassware !== '0';
+  const showDate = s.show_on_tap_date !== '0';
+  list.innerHTML = filtered.map(t => {
+    const col = t.color || 'var(--accent)';
+    const kg = kegCol(t.keg_level);
+    const lbl = tapLabel(t);
+    const dateStr = showDate && t.on_tap_date ? formatDate(t.on_tap_date) : null;
+    return `<div class="menu-card" onclick="openTapModal('${t.id}')">
+      <div class="menu-card-strip" style="background:${col}"></div>
+      <div class="menu-card-body">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:0.75rem">
+          <div style="flex:1;min-width:0">
+            ${lbl ? `<div style="font:500 0.62rem var(--font-mono);color:var(--text-dim);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.2rem">${lbl}</div>` : ''}
+            <div style="font-weight:700;font-size:0.975rem">${esc(t.name)}</div>
+            ${showProducer && t.producer ? `<div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.1rem">${esc(t.producer)}</div>` : ''}
+            ${showStyle && t.style ? `<div style="font-size:0.72rem;color:var(--text-muted);font-style:italic;margin-top:0.1rem">${esc(t.style)}</div>` : ''}
+          </div>
+          <span class="tap-status-badge ${statusClass(t.status)}">${statusChipLabel(t.status)}</span>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:0.3rem;margin-top:0.5rem">
+          ${showAbv && t.abv ? `<span class="badge abv">${t.abv}%</span>` : ''}
+          ${showIbu && t.ibu ? `<span class="badge ibu">${t.ibu} IBU</span>` : ''}
+          ${showServe && t.serve_method && t.status === 'active' ? `<span class="badge serve">${serveIcon(t.serve_method)} ${esc(t.serve_method)}</span>` : ''}
+          ${showGlass && t.glassware && t.status === 'active' ? `<span class="badge">${glassIcon(t.glassware)} ${esc(t.glassware)}</span>` : ''}
+          ${showPrice && t.price ? `<span class="badge">${esc(t.price)}</span>` : ''}
+          ${dateStr ? `<span class="badge" style="color:var(--text-dim)">On tap ${dateStr}</span>` : ''}
+        </div>
+        ${showKeg ? `<div class="keg-bar-wrap" style="margin-top:0.5rem"><div class="keg-bar-track"><div class="keg-bar-fill" style="width:${t.keg_level}%;background:${kg}"></div></div><span class="keg-label">${t.keg_level}%</span></div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+function setMenuFilter(cat) { state.menuFilter = cat; renderMobileMenu(); }
+
+// ════════════════════════════════ TAP MODAL ════════════════════════════════
+async function openTapModal(id) {
+  const tap = state.taps.find(t => t.id === id) || await api('GET', '/taps/' + id).catch(() => null);
+  if (!tap) return;
+  const s = state.settings;
+  const col = tap.color || 'var(--accent)';
+  document.getElementById('modal-color-band').style.background = col;
+  const lbl = tapLabel(tap);
+  document.getElementById('modal-tap-label').textContent = lbl;
+  document.getElementById('modal-tap-label').style.display = lbl ? 'block' : 'none';
+  document.getElementById('modal-tap-name').textContent = tap.name;
+  document.getElementById('modal-tap-producer').textContent = tap.producer || '';
+
+  const showAbv = s.show_abv !== '0', showIbu = s.show_ibu !== '0', showKeg = s.show_keg_level !== '0', showPrice = s.show_price === '1';
+  const kg = kegCol(tap.keg_level);
+  let html = '';
+
+  // Stats
+  const stats = [];
+  if (showAbv && tap.abv) stats.push({v:`${tap.abv}%`, l:'ABV'});
+  if (showIbu && tap.ibu) stats.push({v:tap.ibu, l:'IBU'});
+  if (tap.serving_size) stats.push({v:esc(tap.serving_size), l:'Serving'});
+  if (showPrice && tap.price) stats.push({v:esc(tap.price), l:'Price'});
+  if (stats.length) html += `<div class="stat-row">${stats.map(st => `<div class="stat"><div class="stat-val">${st.v}</div><div class="stat-lbl">${st.l}</div></div>`).join('')}</div>`;
+
+  // Badges
+  html += `<div style="display:flex;flex-wrap:wrap;gap:0.3rem;margin-top:0.75rem">`;
+  if (tap.style) html += `<span class="badge">${esc(tap.style)}</span>`;
+  html += `<span class="badge cat">${categoryLabel(tap.category)}</span>`;
+  html += `<span class="tap-status-badge ${statusClass(tap.status)}">${statusLabel(tap.status)}</span>`;
+  html += `</div>`;
+
+  // Serving details section
+  if (tap.serve_method || tap.glassware || tap.on_tap_date) {
+    html += `<div class="modal-section"><div class="modal-section-title">Serving</div><div class="serve-details-grid">`;
+    if (tap.serve_method) html += `<div class="serve-detail-item">${serveIcon(tap.serve_method)} <span class="sdi-label">Method</span><span class="sdi-val">${esc(tap.serve_method)}</span></div>`;
+    if (tap.glassware) html += `<div class="serve-detail-item">${glassIcon(tap.glassware)} <span class="sdi-label">Glass</span><span class="sdi-val">${esc(tap.glassware)}</span></div>`;
+    if (tap.on_tap_date) html += `<div class="serve-detail-item">📅 <span class="sdi-label">On tap</span><span class="sdi-val">${formatDate(tap.on_tap_date)}</span></div>`;
+    html += `</div></div>`;
+  }
+
+  // Keg
+  if (showKeg) html += `<div class="modal-section"><div class="modal-section-title">Keg Level</div>
+    <div style="display:flex;align-items:center;gap:0.875rem">
+      <div style="flex:1;height:8px;background:var(--surface2);border-radius:4px;overflow:hidden"><div style="width:${tap.keg_level}%;height:100%;background:${kg};border-radius:4px"></div></div>
+      <span style="font:600 1rem var(--font-mono);color:${kg}">${tap.keg_level}%</span>
+    </div></div>`;
+
+  if (tap.description) html += `<div class="modal-section"><div class="modal-section-title">Description</div><div class="modal-description">${esc(tap.description)}</div></div>`;
+  if (tap.tasting_notes) html += `<div class="modal-section"><div class="modal-section-title">Tasting Notes</div><div class="modal-tasting-notes">"${esc(tap.tasting_notes)}"</div></div>`;
+
+  // Links
+  const links = [];
+  if (tap.untappd_url) links.push(`<a class="modal-link untappd" href="${esc(tap.untappd_url)}" target="_blank" rel="noopener">🍻 Untappd</a>`);
+  if (tap.brewfather_id) {
+    const batchLabel = tap.brewfather_batch_no ? `🍺 Brewfather Batch #${tap.brewfather_batch_no}` : '🍺 Brewfather';
+    links.push(`<span class="integration-badge">${batchLabel}</span>`);
+  }
+  if (tap.brewers_friend_id) links.push(`<span class="integration-badge">Brewer's Friend</span>`);
+  if (tap.grainfather_id) links.push(`<span class="integration-badge">Grainfather</span>`);
+  if (links.length) html += `<div class="modal-section"><div class="modal-section-title">Links</div><div class="modal-links">${links.join('')}</div></div>`;
+
+  // QR
+  try {
+    const qr = await api('GET', `/qr/${tap.id}`);
+    html += `<div class="modal-section"><div class="modal-section-title">QR Code</div><div class="qr-section"><img class="qr-img" src="${qr.qr}" alt="QR"><div class="qr-url">${qr.url}</div></div></div>`;
+  } catch(e) {}
+
+  // Admin actions
+  if (state.authenticated) {
+    const btns = [`<button class="btn btn-secondary btn-sm" onclick="closeTapModal();openDrawer('${tap.id}')">✏️ Edit Tap</button>`];
+    if (tap.brewfather_id) btns.push(`<button class="btn btn-secondary btn-sm" onclick="syncTapFromBrewfather('${tap.id}')">🔄 Sync Brewfather</button>`);
+    html += `<div class="modal-section" style="display:flex;gap:0.5rem;flex-wrap:wrap">${btns.join('')}</div>`;
+  }
+
+  document.getElementById('modal-body').innerHTML = html;
+  document.getElementById('tap-modal').classList.add('open');
+}
+function closeTapModal() { document.getElementById('tap-modal').classList.remove('open'); }
+function closeModalBg(e) { if (e.target === document.getElementById('tap-modal')) closeTapModal(); }
+
+// ════════════════════════════════ ADMIN ════════════════════════════════
+async function showAdminView() {
+  const auth = await api('GET', '/auth/me').catch(() => ({authenticated: false}));
+  if (auth.authenticated) { state.authenticated = true; showAuthContent(); return; }
+  const s = await fetch('/api/auth/setup', {method:'POST', headers:{'Content-Type':'application/json'}, body:'{}'});
+  s.status === 403 ? showLoginForm() : showSetupForm();
+}
+function showLoginForm() { document.getElementById('admin-login').style.display='block'; document.getElementById('admin-setup').style.display='none'; document.getElementById('admin-content').style.display='none'; }
+function showSetupForm() { document.getElementById('admin-login').style.display='none'; document.getElementById('admin-setup').style.display='block'; document.getElementById('admin-content').style.display='none'; }
+function showAuthContent() { document.getElementById('admin-login').style.display='none'; document.getElementById('admin-setup').style.display='none'; document.getElementById('admin-content').style.display='block'; renderAdminTable(); loadSettingsForm(); }
+async function doLogin() {
+  try { await api('POST', '/auth/login', {username: document.getElementById('login-user').value, password: document.getElementById('login-pass').value}); state.authenticated=true; document.getElementById('login-error').style.display='none'; showAuthContent(); toast('Welcome back!','success'); }
+  catch(e) { const el=document.getElementById('login-error'); el.textContent=e.message; el.style.display='block'; }
+}
+async function doSetup() {
+  try { await api('POST', '/auth/setup', {username: document.getElementById('setup-user').value, password: document.getElementById('setup-pass').value}); state.authenticated=true; showAuthContent(); toast('Account created!','success'); }
+  catch(e) { toast(e.message,'error'); }
+}
+async function doLogout() { await api('POST', '/auth/logout'); state.authenticated=false; showLoginForm(); }
+function showPanel(name) {
+  document.querySelectorAll('.admin-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.sidebar-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-'+name)?.classList.add('active');
+  document.getElementById('sb-'+name)?.classList.add('active');
+  if (name === 'integrations') renderSyncHistory();
+}
+function renderAdminTable() {
+  const tbody = document.getElementById('admin-taps-tbody');
+  const taps = state.taps.filter(t => t.status !== 'deleted');
+  if (!taps.length) { tbody.innerHTML='<tr><td colspan="11" style="text-align:center;color:var(--text-dim);padding:2rem">No taps yet. Add your first one!</td></tr>'; return; }
+  tbody.innerHTML = taps.map(t => `<tr onclick="openDrawer('${t.id}')" style="cursor:pointer">
+    <td>
+      ${t.tap_number ? `<div style="font-family:var(--font-display);font-size:1.4rem;color:var(--text-dim);line-height:1">${t.tap_number}</div>` : ''}
+      ${t.tap_label ? `<div style="font:500 0.62rem var(--font-mono);color:var(--text-dim);text-transform:uppercase;letter-spacing:0.06em;max-width:90px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(t.tap_label)}</div>` : ''}
+    </td>
+    <td>
+      <div style="display:flex;align-items:center;gap:0.5rem">
+        ${t.color ? `<div style="width:9px;height:9px;border-radius:50%;background:${t.color};flex-shrink:0"></div>` : ''}
+        <div><div style="font-weight:600">${esc(t.name)}</div>${t.producer ? `<div style="font-size:0.73rem;color:var(--text-muted)">${esc(t.producer)}</div>` : ''}</div>
+      </div>
+    </td>
+    <td><div style="font-size:0.78rem">${t.style ? esc(t.style) : ''}</div><span class="badge cat" style="font-size:0.6rem">${categoryLabel(t.category)}</span></td>
+    <td style="font-family:var(--font-mono);font-size:0.78rem">${t.abv ? t.abv+'%' : '—'}</td>
+    <td style="font-size:0.78rem">
+      ${t.serve_method ? `<div>${serveIcon(t.serve_method)} ${esc(t.serve_method)}</div>` : ''}
+      ${t.glassware ? `<div style="color:var(--text-muted);font-size:0.72rem">${glassIcon(t.glassware)} ${esc(t.glassware)}</div>` : ''}
+    </td>
+    <td style="font:400 0.72rem var(--font-mono);color:var(--text-muted)">${t.on_tap_date ? formatDate(t.on_tap_date) : '—'}</td>
+    <td style="font:400 0.72rem var(--font-mono);color:var(--text-muted)">${t.brewfather_batch_no ? `<span style="color:var(--purple)">#${t.brewfather_batch_no}</span>` : '—'}</td>
+    <td style="font:400 0.68rem var(--font-mono);color:var(--text-dim);white-space:nowrap">${t.last_synced_at ? `<span title="${t.last_synced_at}">${timeAgo(t.last_synced_at)}</span>` : (t.brewfather_id ? '<span style="color:var(--accent)">Never</span>' : '—')}</td>
+    <td><div class="keg-mini"><div class="keg-mini-bar"><div class="keg-mini-fill" style="width:${t.keg_level}%;background:${kegCol(t.keg_level)}"></div></div><span style="font:400 0.66rem var(--font-mono);color:var(--text-dim)">${t.keg_level}%</span></div></td>
+    <td><span class="tap-status-badge ${statusClass(t.status)}">${statusLabel(t.status)}</span></td>
+    <td style="text-align:right"><div style="display:flex;justify-content:flex-end;gap:0.3rem">
+      <button class="btn btn-secondary btn-sm btn-icon" onclick="event.stopPropagation();openTapModal('${t.id}')" title="View">👁</button>
+      <button class="btn btn-secondary btn-sm btn-icon" onclick="event.stopPropagation();openDrawer('${t.id}')" title="Edit">✏️</button>
+    </div></td>
+  </tr>`).join('');
+}
+
+// ════════════════════════════════ DRAWER ════════════════════════════════
+function openDrawer(id) {
+  state.editingId = id || null;
+  document.getElementById('drawer-title').textContent = id ? 'Edit Tap' : 'Add Tap';
+  document.getElementById('drawer-delete-btn').style.display = id ? 'inline-flex' : 'none';
+  if (id) {
+    const t = state.taps.find(x => x.id === id);
+    if (!t) return;
+    document.getElementById('f-id').value = t.id;
+    document.getElementById('f-num').value = t.tap_number || '';
+    document.getElementById('f-tap-label').value = t.tap_label || '';
+    document.getElementById('f-status').value = t.status || 'active';
+    document.getElementById('f-on-tap-date').value = t.on_tap_date || '';
+    document.getElementById('f-name').value = t.name || '';
+    document.getElementById('f-producer').value = t.producer || '';
+    document.getElementById('f-category').value = t.category || 'beer';
+    document.getElementById('f-style').value = t.style || '';
+    document.getElementById('f-abv').value = t.abv || '';
+    document.getElementById('f-ibu').value = t.ibu || '';
+    document.getElementById('f-price').value = t.price || '';
+    document.getElementById('f-desc').value = t.description || '';
+    document.getElementById('f-notes').value = t.tasting_notes || '';
+    document.getElementById('f-serve-method').value = t.serve_method || '';
+    document.getElementById('f-glassware').value = t.glassware || '';
+    document.getElementById('f-serving').value = t.serving_size || '';
+    document.getElementById('f-color').value = t.color || '';
+    document.getElementById('f-keg').value = t.keg_level ?? 100;
+    document.getElementById('keg-pct-label').textContent = (t.keg_level ?? 100) + '%';
+    document.getElementById('keg-pct-val').textContent = (t.keg_level ?? 100) + '%';
+    document.getElementById('f-image').value = t.image_url || '';
+    document.getElementById('f-untappd').value = t.untappd_url || '';
+    document.getElementById('f-brewfather').value = t.brewfather_id || '';
+    document.getElementById('f-brewersfriend').value = t.brewers_friend_id || '';
+    document.getElementById('f-grainfather').value = t.grainfather_id || '';
+    const imgCurrentWrap = document.getElementById('image-current-wrap');
+    if (t.image_url) { document.getElementById('image-current-img').src = t.image_url; imgCurrentWrap.style.display = 'flex'; }
+    else { imgCurrentWrap.style.display = 'none'; }
+  } else {
+    ['f-id','f-num','f-tap-label','f-name','f-producer','f-style','f-abv','f-ibu','f-price','f-desc','f-notes','f-serving','f-color','f-image','f-untappd','f-brewfather','f-brewersfriend','f-grainfather'].forEach(i => { const el=document.getElementById(i); if(el) el.value=''; });
+    document.getElementById('f-status').value = 'active';
+    document.getElementById('f-category').value = 'beer';
+    document.getElementById('f-serve-method').value = '';
+    document.getElementById('f-glassware').value = '';
+    document.getElementById('f-keg').value = 100;
+    document.getElementById('keg-pct-label').textContent = '100%';
+    document.getElementById('keg-pct-val').textContent = '100%';
+    // Default date to today
+    document.getElementById('f-on-tap-date').value = new Date().toISOString().split('T')[0];
+    document.getElementById('image-current-wrap').style.display = 'none';
+  }
+  setImageTab('url');
+  clearTapImageFile();
+  document.getElementById('drawer-overlay').classList.add('open');
+  document.getElementById('tap-drawer').classList.add('open');
+}
+function closeDrawer() { document.getElementById('drawer-overlay').classList.remove('open'); document.getElementById('tap-drawer').classList.remove('open'); state.editingId=null; }
+
+async function saveTap() {
+  const name = document.getElementById('f-name').value.trim();
+  if (!name) { toast('Name is required','error'); return; }
+
+  try {
+    const fileInput = document.getElementById('f-image-file');
+    if (fileInput && fileInput.files.length > 0) {
+      const formData = new FormData();
+      formData.append('image', fileInput.files[0]);
+      const r = await fetch('/api/taps/upload-image', { method: 'POST', body: formData });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error || 'Upload failed');
+      document.getElementById('f-image').value = data.url;
+      clearTapImageFile();
+    }
+  } catch(e) { toast(e.message, 'error'); return; }
+
+  const body = {
+    tap_number: document.getElementById('f-num').value || null,
+    tap_label: document.getElementById('f-tap-label').value || null,
+    name, status: document.getElementById('f-status').value,
+    on_tap_date: document.getElementById('f-on-tap-date').value || null,
+    producer: document.getElementById('f-producer').value || null,
+    category: document.getElementById('f-category').value,
+    style: document.getElementById('f-style').value || null,
+    abv: document.getElementById('f-abv').value || null,
+    ibu: document.getElementById('f-ibu').value || null,
+    price: document.getElementById('f-price').value || null,
+    description: document.getElementById('f-desc').value || null,
+    tasting_notes: document.getElementById('f-notes').value || null,
+    serve_method: document.getElementById('f-serve-method').value || null,
+    glassware: document.getElementById('f-glassware').value || null,
+    serving_size: document.getElementById('f-serving').value || null,
+    color: document.getElementById('f-color').value || null,
+    keg_level: parseInt(document.getElementById('f-keg').value),
+    image_url: document.getElementById('f-image').value || null,
+    untappd_url: document.getElementById('f-untappd').value || null,
+    brewfather_id: document.getElementById('f-brewfather').value || null,
+    brewers_friend_id: document.getElementById('f-brewersfriend').value || null,
+    grainfather_id: document.getElementById('f-grainfather').value || null,
+  };
+  try {
+    if (state.editingId) { await api('PUT', '/taps/'+state.editingId, body); toast('Tap updated!','success'); }
+    else { await api('POST', '/taps', body); toast('Tap added!','success'); }
+    closeDrawer(); await loadTaps(); renderAdminTable();
+  } catch(e) { toast(e.message,'error'); }
+}
+
+async function deleteTap() {
+  if (!state.editingId || !confirm('Delete this tap?')) return;
+  try { await api('DELETE', '/taps/'+state.editingId); toast('Tap removed','success'); closeDrawer(); await loadTaps(); renderAdminTable(); }
+  catch(e) { toast(e.message,'error'); }
+}
+
+// ════════════════════════════════ SETTINGS ════════════════════════════════
+function loadSettingsForm() {
+  const s = state.settings;
+  document.getElementById('s-brewery-name').value = s.brewery_name || s.taproom_name || '';
+  document.getElementById('s-establishment-name').value = s.establishment_name || s.taproom_name || '';
+  document.getElementById('s-tagline').value = s.tagline || '';
+  document.getElementById('s-layout').value = s.display_layout || 'grid';
+
+  // Accent color — sync picker + text
+  const acc = s.accent_color || '#f59e0b';
+  document.getElementById('s-accent').value = acc;
+  document.getElementById('s-accent-picker').value = acc;
+  const picker = document.getElementById('s-accent-picker');
+  const textInput = document.getElementById('s-accent');
+  picker.oninput = e => { textInput.value = e.target.value; };
+  textInput.oninput = e => { if (/^#[0-9a-f]{6}$/i.test(e.target.value)) picker.value = e.target.value; };
+
+  // Logo
+  const logoUrl = s.logo_url || '';
+  document.getElementById('s-logo').value = logoUrl;
+  const currentWrap = document.getElementById('logo-current-wrap');
+  if (logoUrl) {
+    document.getElementById('logo-current-img').src = logoUrl;
+    currentWrap.style.display = 'flex';
+  } else {
+    currentWrap.style.display = 'none';
+  }
+  document.getElementById('s-use-logo-as-brand').checked = s.use_logo_as_brand === '1';
+
+  // Visibility toggles
+  document.getElementById('s-show-abv').checked = s.show_abv !== '0';
+  document.getElementById('s-show-ibu').checked = s.show_ibu !== '0';
+  document.getElementById('s-show-price').checked = s.show_price === '1';
+  document.getElementById('s-show-keg').checked = s.show_keg_level !== '0';
+  document.getElementById('s-show-style').checked = s.show_style !== '0';
+  document.getElementById('s-show-producer').checked = s.show_producer !== '0';
+  document.getElementById('s-show-category').checked = s.show_category !== '0';
+  document.getElementById('s-show-serve-method').checked = s.show_serve_method !== '0';
+  document.getElementById('s-show-glassware').checked = s.show_glassware !== '0';
+  document.getElementById('s-show-tasting-notes').checked = s.show_tasting_notes !== '0';
+  document.getElementById('s-show-on-tap-date').checked = s.show_on_tap_date !== '0';
+
+  // Pipeline
+  document.getElementById('s-pipeline-enabled').checked = s.pipeline_enabled !== '0';
+  document.getElementById('s-pipeline-title').value = s.pipeline_title || 'Coming Soon';
+  document.getElementById('s-pipeline-refresh').value = s.pipeline_refresh_mins || '0';
+
+  // Custom CSS
+  document.getElementById('s-custom-css').value = s.custom_css || '';
+
+  if (s.brewfather_api_user_id) document.getElementById('bf-user-id').value = s.brewfather_api_user_id;
+  if (s.brewfather_api_key) document.getElementById('bf-api-key').placeholder = '••••••••••••••••';
+}
+
+function setLogoTab(tab) {
+  const isUrl = tab === 'url';
+  document.getElementById('logo-url-panel').style.display = isUrl ? 'block' : 'none';
+  document.getElementById('logo-upload-panel').style.display = isUrl ? 'none' : 'block';
+  document.getElementById('logo-tab-url').style.borderColor = isUrl ? 'var(--accent)' : 'var(--border)';
+  document.getElementById('logo-tab-url').style.color = isUrl ? 'var(--accent)' : 'var(--text-muted)';
+  document.getElementById('logo-tab-upload').style.borderColor = isUrl ? 'var(--border)' : 'var(--accent)';
+  document.getElementById('logo-tab-upload').style.color = isUrl ? 'var(--text-muted)' : 'var(--accent)';
+}
+
+function previewLogoFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  document.getElementById('logo-file-name').textContent = file.name;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const wrap = document.getElementById('logo-preview-wrap');
+    document.getElementById('logo-preview-img').src = e.target.result;
+    wrap.style.display = 'flex';
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearLogoFile() {
+  document.getElementById('s-logo-file').value = '';
+  document.getElementById('logo-file-name').textContent = 'PNG, JPG, GIF, SVG, WebP — max 2MB';
+  document.getElementById('logo-preview-wrap').style.display = 'none';
+}
+
+function setImageTab(tab) {
+  const isUrl = tab === 'url';
+  document.getElementById('image-url-panel').style.display = isUrl ? 'block' : 'none';
+  document.getElementById('image-upload-panel').style.display = isUrl ? 'none' : 'block';
+  document.getElementById('image-tab-url').style.borderColor = isUrl ? 'var(--accent)' : 'var(--border)';
+  document.getElementById('image-tab-url').style.color = isUrl ? 'var(--accent)' : 'var(--text-muted)';
+  document.getElementById('image-tab-upload').style.borderColor = isUrl ? 'var(--border)' : 'var(--accent)';
+  document.getElementById('image-tab-upload').style.color = isUrl ? 'var(--text-muted)' : 'var(--accent)';
+}
+
+function previewTapImageFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  document.getElementById('image-file-name').textContent = file.name;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const wrap = document.getElementById('image-preview-wrap');
+    document.getElementById('image-preview-img').src = e.target.result;
+    wrap.style.display = 'flex';
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearTapImageFile() {
+  document.getElementById('f-image-file').value = '';
+  document.getElementById('image-file-name').textContent = 'PNG, JPG, GIF, SVG, WebP — max 2MB';
+  document.getElementById('image-preview-wrap').style.display = 'none';
+}
+
+async function removeLogo() {
+  try {
+    await api('PUT', '/auth/settings', { logo_url: '' });
+    await loadSettings();
+    document.getElementById('logo-current-wrap').style.display = 'none';
+    document.getElementById('s-logo').value = '';
+    toast('Logo removed', 'success');
+  } catch(e) { toast(e.message, 'error'); }
+}
+async function saveSettings() {
+  try {
+    // Handle logo file upload if a file was selected
+    const fileInput = document.getElementById('s-logo-file');
+    const urlPanel = document.getElementById('logo-url-panel');
+    if (fileInput && fileInput.files.length > 0) {
+      const formData = new FormData();
+      formData.append('logo', fileInput.files[0]);
+      const r = await fetch('/api/auth/upload-logo', { method: 'POST', body: formData });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error || 'Upload failed');
+      // URL will be saved by the upload endpoint; update local input so it's reflected
+      document.getElementById('s-logo').value = data.url;
+      clearLogoFile();
+    }
+
+    await api('PUT', '/auth/settings', {
+      brewery_name: document.getElementById('s-brewery-name').value,
+      establishment_name: document.getElementById('s-establishment-name').value,
+      tagline: document.getElementById('s-tagline').value,
+      display_layout: document.getElementById('s-layout').value,
+      accent_color: document.getElementById('s-accent').value,
+      logo_url: document.getElementById('s-logo').value,
+      use_logo_as_brand: document.getElementById('s-use-logo-as-brand').checked ? '1' : '0',
+      show_abv: document.getElementById('s-show-abv').checked ? '1' : '0',
+      show_ibu: document.getElementById('s-show-ibu').checked ? '1' : '0',
+      show_price: document.getElementById('s-show-price').checked ? '1' : '0',
+      show_keg_level: document.getElementById('s-show-keg').checked ? '1' : '0',
+      show_style: document.getElementById('s-show-style').checked ? '1' : '0',
+      show_producer: document.getElementById('s-show-producer').checked ? '1' : '0',
+      show_category: document.getElementById('s-show-category').checked ? '1' : '0',
+      show_serve_method: document.getElementById('s-show-serve-method').checked ? '1' : '0',
+      show_glassware: document.getElementById('s-show-glassware').checked ? '1' : '0',
+      show_tasting_notes: document.getElementById('s-show-tasting-notes').checked ? '1' : '0',
+      show_on_tap_date: document.getElementById('s-show-on-tap-date').checked ? '1' : '0',
+      pipeline_enabled: document.getElementById('s-pipeline-enabled').checked ? '1' : '0',
+      pipeline_title: document.getElementById('s-pipeline-title').value || 'Coming Soon',
+      pipeline_refresh_mins: document.getElementById('s-pipeline-refresh').value || '0',
+      custom_css: document.getElementById('s-custom-css').value || '',
+    });
+    await loadSettings(); renderDisplay(); toast('Settings saved!', 'success');
+  } catch(e) { toast(e.message, 'error'); }
+}
+async function changePassword() {
+  const cur=document.getElementById('pw-current').value, nw=document.getElementById('pw-new').value, conf=document.getElementById('pw-confirm').value;
+  if (nw !== conf) { toast('Passwords do not match','error'); return; }
+  try { await api('POST', '/auth/change-password', {current_password:cur, new_password:nw}); toast('Password updated!','success'); ['pw-current','pw-new','pw-confirm'].forEach(i => document.getElementById(i).value=''); }
+  catch(e) { toast(e.message,'error'); }
+}
+
+// ════════════════════════════════ BREWFATHER ════════════════════════════════
+// Brewfather status → tap status label for display
+const BF_STATUS_LABELS = {
+  'Planning': { label: 'Coming Soon', color: '#fbbf24' },
+  'Brewing':  { label: 'Coming Soon', color: '#fbbf24' },
+  'Fermenting': { label: 'Coming Soon', color: '#fbbf24' },
+  'Conditioning': { label: 'Coming Soon', color: '#fbbf24' },
+  'Completed': { label: 'On Tap', color: '#22c55e' },
+  'Archived':  { label: 'Kicked', color: '#ef4444' },
+};
+
+let bfLoadedBatches = []; // cache for bulk selection
+
+async function saveBrewfatherCreds() {
+  const userId = document.getElementById('bf-user-id').value.trim();
+  const apiKey = document.getElementById('bf-api-key').value.trim();
+  if (!userId) { toast('User ID is required','error'); return; }
+  try {
+    const body = { brewfather_api_user_id: userId };
+    if (apiKey) body.brewfather_api_key = apiKey;
+    await api('PUT', '/auth/settings', body);
+    await loadSettings();
+    if (apiKey) { document.getElementById('bf-api-key').value=''; document.getElementById('bf-api-key').placeholder='••••••••••••••••'; }
+    toast('Brewfather credentials saved!','success');
+  } catch(e) { toast(e.message,'error'); }
+}
+
+async function loadBrewfatherBatches() {
+  const listEl = document.getElementById('bf-batches-list');
+  const bulkBar = document.getElementById('bf-bulk-bar');
+  const status = document.getElementById('bf-status-filter').value;
+  listEl.innerHTML = '<div style="color:var(--text-muted);font-size:0.875rem;padding:0.75rem 0">⏳ Fetching from Brewfather…</div>';
+  bulkBar.style.display = 'none';
+  bfLoadedBatches = [];
+
+  try {
+    const batches = await api('GET', `/brewfather/batches?status=${encodeURIComponent(status)}`);
+    if (!batches.length) { listEl.innerHTML='<div style="color:var(--text-dim);font-size:0.875rem;padding:0.75rem 0">No batches found.</div>'; return; }
+
+    bfLoadedBatches = batches;
+    const onTap = new Set(state.taps.filter(t => t.brewfather_id).map(t => t.brewfather_id));
+    const importableCount = batches.filter(b => !onTap.has(b.brewfather_id)).length;
+
+    bulkBar.style.display = importableCount > 0 ? 'flex' : 'none';
+    updateBulkCount();
+
+    listEl.innerHTML = batches.map(b => {
+      const already = onTap.has(b.brewfather_id);
+      const brewDate = b._brew_date ? new Date(b._brew_date).toLocaleDateString() : null;
+      const bfStatus = b._batch_status || '';
+      const statusInfo = BF_STATUS_LABELS[bfStatus] || { label: bfStatus, color: 'var(--text-muted)' };
+      const batchLabel = b._batch_no ? `#${b._batch_no} · ` : '';
+
+      return `<div style="display:flex;align-items:center;gap:0.875rem;padding:0.75rem 0;border-bottom:1px solid var(--border)" data-bfid="${b.brewfather_id}">
+        ${!already ? `<input type="checkbox" class="bf-batch-cb" data-id="${b.brewfather_id}" onchange="updateBulkCount()" style="width:15px;height:15px;flex-shrink:0;accent-color:var(--accent)">` : `<div style="width:15px;flex-shrink:0"></div>`}
+        <div style="width:30px;height:30px;border-radius:50%;background:${b.color||'var(--surface3)'};border:2px solid var(--border);flex-shrink:0"></div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:0.875rem">${esc(b.name)}</div>
+          <div style="font-size:0.7rem;color:var(--text-muted);margin-top:0.1rem">${batchLabel}${[b.style, b.abv?b.abv+'% ABV':null, b.ibu?b.ibu+' IBU':null, brewDate?'Brewed '+brewDate:null].filter(Boolean).join(' · ')}</div>
+        </div>
+        <span style="font:500 0.65rem var(--font-mono);color:${statusInfo.color};background:${statusInfo.color}18;border:1px solid ${statusInfo.color}33;padding:0.18rem 0.5rem;border-radius:4px;white-space:nowrap;flex-shrink:0">→ ${statusInfo.label}</span>
+        ${already
+          ? `<span style="font:500 0.68rem var(--font-mono);color:var(--green);background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.2);padding:0.22rem 0.55rem;border-radius:4px;white-space:nowrap">✓ On Tap</span>`
+          : `<button class="btn btn-secondary btn-sm" onclick="importSingleBatch('${b.brewfather_id}',this)" style="flex-shrink:0">+ Add</button>`
+        }
+      </div>`;
+    }).join('');
+
+    renderSyncHistory();
+  } catch(e) { listEl.innerHTML=`<div style="color:var(--red);font-size:0.875rem;padding:0.75rem 0">⚠️ ${esc(e.message)}</div>`; }
+}
+
+function updateBulkCount() {
+  const checked = document.querySelectorAll('.bf-batch-cb:checked');
+  const countEl = document.getElementById('bf-selected-count');
+  const importBtn = document.getElementById('bf-bulk-import-btn');
+  const n = checked.length;
+  countEl.textContent = n > 0 ? `${n} selected` : '';
+  importBtn.style.display = n > 0 ? 'inline-flex' : 'none';
+}
+
+function toggleSelectAllBatches(checked) {
+  document.querySelectorAll('.bf-batch-cb').forEach(cb => cb.checked = checked);
+  updateBulkCount();
+}
+
+async function importSingleBatch(batchId, btn) {
+  const orig = btn.textContent; btn.textContent='⏳'; btn.disabled=true;
+  try {
+    const tap = await api('POST', `/brewfather/import/${batchId}`, {});
+    // Update row UI: hide checkbox and button, show "On Tap"
+    const row = document.querySelector(`[data-bfid="${batchId}"]`);
+    if (row) {
+      const cb = row.querySelector('.bf-batch-cb');
+      if (cb) cb.replaceWith(document.createElement('div'));
+      btn.outerHTML = `<span style="font:500 0.68rem var(--font-mono);color:var(--green);background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.2);padding:0.22rem 0.55rem;border-radius:4px">✓ On Tap</span>`;
+    }
+    await loadTaps(); renderSyncHistory(); updateBulkCount();
+    toast(`"${tap.name}" added as ${tap.status === 'coming-soon' ? 'Coming Soon' : 'On Tap'}`, 'success');
+  } catch(e) {
+    if (e.message?.includes('already')) { btn.textContent='✓ On Tap'; }
+    else { btn.textContent=orig; btn.disabled=false; toast(e.message,'error'); }
+  }
+}
+
+async function bulkImportSelected() {
+  const checkboxes = document.querySelectorAll('.bf-batch-cb:checked');
+  if (!checkboxes.length) return;
+
+  const btn = document.getElementById('bf-bulk-import-btn');
+  const origText = btn.textContent;
+  btn.textContent = `⏳ Importing ${checkboxes.length}…`;
+  btn.disabled = true;
+
+  const batchAssignments = Array.from(checkboxes).map(cb => ({ brewfather_id: cb.dataset.id }));
+
+  try {
+    const results = await api('POST', '/brewfather/import-bulk', { batches: batchAssignments });
+    await loadTaps();
+
+    // Update row UI for each successfully imported batch
+    results.imported.forEach(tap => {
+      const row = document.querySelector(`[data-bfid="${tap.brewfather_id}"]`);
+      if (row) {
+        const cb = row.querySelector('.bf-batch-cb');
+        if (cb) { const d = document.createElement('div'); d.style.width='15px'; cb.replaceWith(d); }
+        const addBtn = row.querySelector('button');
+        if (addBtn) addBtn.outerHTML = `<span style="font:500 0.68rem var(--font-mono);color:var(--green);background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.2);padding:0.22rem 0.55rem;border-radius:4px">✓ On Tap</span>`;
+      }
+    });
+
+    renderSyncHistory();
+    updateBulkCount();
+    document.getElementById('bf-select-all').checked = false;
+
+    const msg = results.imported.length === 1
+      ? `"${results.imported[0].name}" added!`
+      : `${results.imported.length} batches imported!`;
+    toast(msg, 'success');
+    if (results.errors.length) toast(`${results.errors.length} failed — check console`, 'error');
+  } catch(e) {
+    toast(e.message, 'error');
+  } finally {
+    btn.textContent = origText; btn.disabled = false;
+  }
+}
+
+function renderSyncHistory() {
+  const el = document.getElementById('bf-sync-history-list');
+  if (!el) return;
+  const linked = state.taps.filter(t => t.brewfather_id && t.status !== 'deleted');
+  if (!linked.length) {
+    el.innerHTML = '<div style="color:var(--text-dim);font-size:0.875rem;padding:0.5rem 0">No Brewfather-linked taps yet.</div>';
+    return;
+  }
+  el.innerHTML = linked.map(t => {
+    const kg = kegCol(t.keg_level);
+    const syncedStr = t.last_synced_at ? timeAgo(t.last_synced_at) : '<span style="color:var(--accent)">Never synced</span>';
+    return `<div style="display:flex;align-items:center;gap:0.875rem;padding:0.625rem 0;border-bottom:1px solid var(--border)">
+      <div style="width:10px;height:10px;border-radius:50%;background:${t.color||'var(--surface3)'};flex-shrink:0"></div>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:600;font-size:0.84rem">${esc(t.name)}</div>
+        <div style="font-size:0.7rem;color:var(--text-muted)">${t.brewfather_batch_no?'Batch #'+t.brewfather_batch_no+' · ':''}Last synced: ${syncedStr}</div>
+      </div>
+      <span class="tap-status-badge ${statusClass(t.status)}">${statusLabel(t.status)}</span>
+      <button class="btn btn-secondary btn-sm" onclick="syncOneTap('${t.id}', this)">↻ Sync</button>
+    </div>`;
+  }).join('');
+}
+
+async function syncOneTap(tapId, btn) {
+  const orig = btn.textContent; btn.textContent='⏳'; btn.disabled=true;
+  try {
+    const tap = await api('POST', `/brewfather/sync/${tapId}`);
+    await loadTaps(); renderSyncHistory();
+    toast(`"${tap.name}" synced — status: ${tap.status}`, 'success');
+  } catch(e) { toast(e.message,'error'); }
+  finally { btn.textContent=orig; btn.disabled=false; }
+}
+
+async function syncAllBrewfather() {
+  const btn = document.getElementById('bf-sync-all-btn');
+  const orig = btn.textContent; btn.textContent='⏳ Syncing…'; btn.disabled=true;
+  try {
+    const results = await api('POST', '/brewfather/sync-all', {});
+    await loadTaps(); renderSyncHistory();
+    const msg = results.synced.length === 1
+      ? `"${results.synced[0].name}" synced!`
+      : `${results.synced.length} taps synced!`;
+    toast(msg, 'success');
+    if (results.errors.length) toast(`${results.errors.length} failed`, 'error');
+  } catch(e) { toast(e.message,'error'); }
+  finally { btn.textContent=orig; btn.disabled=false; }
+}
+
+async function syncTapFromBrewfather(tapId) {
+  try {
+    const tap = await api('POST', `/brewfather/sync/${tapId}`);
+    await loadTaps(); renderSyncHistory();
+    toast(`"${tap.name}" synced — status: ${tap.status}`, 'success');
+    closeTapModal(); openTapModal(tapId);
+  } catch(e) { toast(e.message,'error'); }
+}
+
+// ════════════════════════════════ UTILS ════════════════════════════════
+function timeAgo(isoStr) {
+  const diff = Date.now() - new Date(isoStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  if (days < 7) return `${days}d ago`;
+  return new Date(isoStr).toLocaleDateString();
+}
+function toast(msg, type='success') {
+  const el = document.createElement('div');
+  el.className = `toast ${type}`; el.textContent = msg;
+  document.getElementById('toasts').appendChild(el);
+  setTimeout(() => el.remove(), 3200);
+}
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { closeTapModal(); closeDrawer(); }
+  if (e.key === 'Enter' && document.activeElement === document.getElementById('login-pass')) doLogin();
+});
+
+init();
+</script>
+</body>
+</html>
