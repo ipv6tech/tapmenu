@@ -102,9 +102,10 @@ router.put('/settings', requireAuth, (req, res) => {
     'tagline', 'display_theme', 'show_abv', 'show_ibu', 'show_price',
     'show_keg_level', 'show_style', 'show_producer', 'show_category',
     'show_serve_method', 'show_glassware', 'show_tasting_notes', 'show_on_tap_date',
+    'show_description', 'show_serving_size',
     'pipeline_enabled', 'pipeline_title', 'pipeline_refresh_mins',
     'custom_css',
-    'accent_color', 'logo_url', 'display_layout', 'use_logo_as_brand',
+    'accent_color', 'logo_url', 'display_layout', 'use_logo_as_brand', 'logo_size',
     'brewfather_api_user_id', 'brewfather_api_key'
   ];
   try {

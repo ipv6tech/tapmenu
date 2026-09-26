@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CellarMenu Pro</title>
+<link rel="icon" id="favicon">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,700;1,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -21,10 +22,50 @@
   --text-dim: #4a4a4a;
   --green: #22c55e;
   --red: #ef4444;
+  --nav-bg: rgba(10,10,10,0.95);
+  --hover-tint: rgba(255,255,255,0.02);
   --radius: 10px;
   --font-display: 'Bebas Neue', sans-serif;
   --font-body: 'DM Sans', sans-serif;
   --font-mono: 'DM Mono', monospace;
+  color-scheme: dark;
+}
+/* Light theme — explicit choice, or "auto" following the OS/browser preference */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]):not([data-theme="light"]) {
+    --accent-dim: rgba(245,158,11,0.16);
+    --bg: #f6f4f0;
+    --surface: #ffffff;
+    --surface2: #eeebe5;
+    --surface3: #e2ddd3;
+    --border: rgba(0,0,0,0.09);
+    --border2: rgba(0,0,0,0.15);
+    --text: #1a1816;
+    --text-muted: #6b6560;
+    --text-dim: #a39d94;
+    --green: #16a34a;
+    --red: #dc2626;
+    --nav-bg: rgba(255,255,255,0.92);
+    --hover-tint: rgba(0,0,0,0.035);
+    color-scheme: light;
+  }
+}
+:root[data-theme="light"] {
+  --accent-dim: rgba(245,158,11,0.16);
+  --bg: #f6f4f0;
+  --surface: #ffffff;
+  --surface2: #eeebe5;
+  --surface3: #e2ddd3;
+  --border: rgba(0,0,0,0.09);
+  --border2: rgba(0,0,0,0.15);
+  --text: #1a1816;
+  --text-muted: #6b6560;
+  --text-dim: #a39d94;
+  --green: #16a34a;
+  --red: #dc2626;
+  --nav-bg: rgba(255,255,255,0.92);
+  --hover-tint: rgba(0,0,0,0.035);
+  color-scheme: light;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: var(--font-body); background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
@@ -34,7 +75,7 @@ body { font-family: var(--font-body); background: var(--bg); color: var(--text);
   position: fixed; top: 0; left: 0; right: 0; z-index: 100;
   display: flex; align-items: center; justify-content: space-between; gap: 0.9rem;
   padding: 0 1.5rem; height: 56px;
-  background: rgba(10,10,10,0.95); backdrop-filter: blur(16px);
+  background: var(--nav-bg); backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--border);
 }
 .hamburger-btn { background: none; border: none; color: var(--text); font-size: 1.3rem; line-height: 1; cursor: pointer; padding: 0.35rem 0.5rem; border-radius: 6px; transition: background 0.15s; }
@@ -100,9 +141,12 @@ body { font-family: var(--font-body); background: var(--bg); color: var(--text);
 .tap-card-large-meta { flex: 1; min-width: 0; }
 .tap-label-line { font: 500 0.64rem var(--font-mono); color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 0.3rem; }
 .tap-name-lg { font-size: 1.3rem; font-weight: 700; line-height: 1.2; }
+.tap-number-lg { font-family: var(--font-display); font-size: 2.6rem; color: var(--text-dim); line-height: 0.9; letter-spacing: 0.06em; text-transform: uppercase; }
 .tap-producer-lg { font-size: 0.8rem; color: var(--text-muted); margin-top: 0.2rem; }
-.tap-style-lg { font-size: 0.78rem; color: var(--text-muted); font-style: italic; margin-top: 0.5rem; }
+.tap-style-lg { font: 700 0.76rem var(--font-mono); color: var(--text); margin-top: 0.35rem; }
 .tap-notes-lg { font-size: 0.78rem; color: var(--text-muted); font-style: italic; line-height: 1.55; margin-top: 0.5rem; }
+.tap-desc-lg { font-size: 0.78rem; color: var(--text-muted); line-height: 1.5; margin-top: 0.5rem; }
+.tap-desc-sm { font-size: 0.75rem; color: var(--text-muted); line-height: 1.4; margin-top: 0.3rem; }
 .tap-stats-row { display: flex; gap: 0.5rem; flex-wrap: wrap; margin: 0.875rem 0 0.75rem; }
 .tap-stat { background: var(--surface2); border: 1px solid var(--border); border-radius: 7px; padding: 0.45rem 0.75rem; text-align: center; }
 .tap-stat-val { font-family: var(--font-display); font-size: 1.15rem; color: var(--accent); letter-spacing: 0.03em; line-height: 1; }
@@ -225,7 +269,7 @@ thead { background: var(--surface2); }
 th { padding: 0.65rem 1rem; text-align: left; font: 500 0.66rem var(--font-mono); color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; border-bottom: 1px solid var(--border); white-space: nowrap; }
 td { padding: 0.65rem 1rem; border-bottom: 1px solid var(--border); font-size: 0.84rem; vertical-align: middle; }
 tr:last-child td { border-bottom: none; }
-tr:hover td { background: rgba(255,255,255,0.02); }
+tr:hover td { background: var(--hover-tint); }
 .keg-mini { display: flex; align-items: center; gap: 0.5rem; }
 .keg-mini-bar { width: 50px; height: 3px; background: var(--surface3); border-radius: 2px; overflow: hidden; }
 .keg-mini-fill { height: 100%; border-radius: 2px; }
@@ -390,7 +434,7 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px;
           </div>
           <div class="settings-card">
             <h3>Display</h3>
-            <div class="form-row" style="margin-bottom:0.875rem">
+            <div class="form-row-3" style="margin-bottom:0.875rem">
               <div class="form-group" style="margin-bottom:0">
                 <label class="form-label">Default Layout</label>
                 <select class="form-select" id="s-layout">
@@ -405,6 +449,14 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px;
                   <input type="color" id="s-accent-picker" style="width:38px;height:38px;border:1px solid var(--border);border-radius:6px;background:none;cursor:pointer;padding:2px;flex-shrink:0">
                   <input class="form-input" id="s-accent" type="text" placeholder="#f59e0b" style="flex:1;font-family:var(--font-mono);font-size:0.82rem">
                 </div>
+              </div>
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">Theme</label>
+                <select class="form-select" id="s-theme">
+                  <option value="dark">Dark</option>
+                  <option value="light">Light</option>
+                  <option value="auto">Auto — match device</option>
+                </select>
               </div>
             </div>
             <div class="form-group" style="margin-bottom:0">
@@ -437,9 +489,16 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px;
             </div>
             <div class="toggle-row" style="border-bottom:none;margin-top:0.875rem">
               <span class="toggle-label">Use logo instead of brewery name</span>
-              <label class="toggle"><input type="checkbox" id="s-use-logo-as-brand"><span class="toggle-slider"></span></label>
+              <label class="toggle"><input type="checkbox" id="s-use-logo-as-brand" onchange="toggleLogoSizeRow()"><span class="toggle-slider"></span></label>
             </div>
             <div style="font-size:0.72rem;color:var(--text-dim);margin-top:0.2rem">Applies to the nav bar and the display page header. If no logo is uploaded, nothing shows in its place.</div>
+            <div id="logo-size-row" style="margin-top:0.875rem;display:none">
+              <label class="form-label">Logo Size on Display <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-dim)">(display page header only)</span></label>
+              <div style="display:flex;align-items:center;gap:0.75rem">
+                <input type="range" id="s-logo-size" min="40" max="240" step="4" value="64" style="flex:1" oninput="document.getElementById('logo-size-label').textContent=this.value+'px'">
+                <span id="logo-size-label" style="font:500 0.8rem var(--font-mono);color:var(--text-dim);min-width:3.2em;text-align:right">64px</span>
+              </div>
+            </div>
           </div>
           <div class="settings-card">
             <h3>Visibility</h3>
@@ -454,7 +513,9 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px;
             <div class="toggle-row"><span class="toggle-label">Serve Method</span><label class="toggle"><input type="checkbox" id="s-show-serve-method"><span class="toggle-slider"></span></label></div>
             <div class="toggle-row"><span class="toggle-label">Glassware</span><label class="toggle"><input type="checkbox" id="s-show-glassware"><span class="toggle-slider"></span></label></div>
             <div class="toggle-row"><span class="toggle-label">Tasting Notes</span><label class="toggle"><input type="checkbox" id="s-show-tasting-notes"><span class="toggle-slider"></span></label></div>
-            <div class="toggle-row" style="border-bottom:none"><span class="toggle-label">On Tap Date</span><label class="toggle"><input type="checkbox" id="s-show-on-tap-date"><span class="toggle-slider"></span></label></div>
+            <div class="toggle-row"><span class="toggle-label">Tapped Date</span><label class="toggle"><input type="checkbox" id="s-show-on-tap-date"><span class="toggle-slider"></span></label></div>
+            <div class="toggle-row"><span class="toggle-label">Description</span><label class="toggle"><input type="checkbox" id="s-show-description"><span class="toggle-slider"></span></label></div>
+            <div class="toggle-row" style="border-bottom:none"><span class="toggle-label">Serving Size</span><label class="toggle"><input type="checkbox" id="s-show-serving-size"><span class="toggle-slider"></span></label></div>
           </div>
           <div class="settings-card">
             <h3>Pipeline Section</h3>
@@ -832,17 +893,23 @@ function applySettings(s) {
 
   document.title = breweryName ? `${breweryName} — Draft List` : 'CellarMenu Pro';
 
+  const faviconEl = document.getElementById('favicon');
+  if (faviconEl) {
+    if (s.logo_url) faviconEl.setAttribute('href', s.logo_url);
+    else faviconEl.removeAttribute('href');
+  }
+
   // Top nav brand: mini logo replaces the beer-glass icon whenever a logo is set.
-  // When "use logo instead of name" is on, only the logo shows (nothing if none uploaded).
+  // When "use logo instead of name" is on, the nav brand is hidden entirely —
+  // the big centered logo on the display page already carries the branding.
+  const navBrandEl = document.querySelector('.nav-brand');
   const navIcon = document.getElementById('nav-brand-icon');
   const navLogo = document.getElementById('nav-brand-logo');
   const navName = document.getElementById('nav-brand-name');
   if (useLogoAsBrand) {
-    navIcon.style.display = 'none';
-    navName.style.display = 'none';
-    navLogo.style.display = hasLogo ? '' : 'none';
-    if (hasLogo) navLogo.src = s.logo_url;
+    navBrandEl.style.display = 'none';
   } else {
+    navBrandEl.style.display = '';
     navName.style.display = '';
     navName.textContent = breweryName;
     navIcon.style.display = hasLogo ? 'none' : '';
@@ -867,11 +934,12 @@ function applySettings(s) {
   if (showLogoAsBrand) {
     titleEl.style.display = 'none';
     logoEl.src = s.logo_url; logoEl.style.display = 'block';
+    logoEl.style.height = (parseInt(s.logo_size, 10) || 64) + 'px';
   } else {
     titleEl.style.display = '';
     titleEl.textContent = displayName;
-    logoEl.style.display = hasLogo ? 'block' : 'none';
-    if (hasLogo) logoEl.src = s.logo_url;
+    logoEl.style.display = 'none';
+    logoEl.style.height = '';
   }
   taglineEl.textContent = s.tagline || '';
   taglineEl.style.display = hasTagline ? '' : 'none';
@@ -879,9 +947,10 @@ function applySettings(s) {
   document.getElementById('menu-title').textContent = displayName;
   document.getElementById('menu-tagline').textContent = s.tagline || "What's on tap";
 
+  const resolvedTheme = applyTheme(s.display_theme || 'dark');
   if (s.accent_color) {
     document.documentElement.style.setProperty('--accent', s.accent_color);
-    document.documentElement.style.setProperty('--accent-dim', hexToRgba(s.accent_color, 0.12));
+    document.documentElement.style.setProperty('--accent-dim', hexToRgba(s.accent_color, resolvedTheme === 'light' ? 0.16 : 0.12));
   }
 
   // Custom CSS injection
@@ -920,12 +989,26 @@ function closeNavPanel() {
 }
 
 // ════════════════════════════════ HELPERS ════════════════════════════════
+// Applies the display_theme setting to the document and returns the resolved
+// theme ('dark' or 'light') — 'auto' resolves via the OS/browser preference.
+function applyTheme(mode) {
+  const root = document.documentElement;
+  if (mode === 'dark' || mode === 'light') {
+    root.setAttribute('data-theme', mode);
+    return mode;
+  }
+  root.removeAttribute('data-theme');
+  return (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) ? 'light' : 'dark';
+}
 function hexToRgba(hex, a) {
   const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
   return `rgba(${r},${g},${b},${a})`;
 }
 function esc(s) {
   return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function truncate(str, n) {
+  return str.length > n ? str.slice(0, n) + '…' : str;
 }
 function kegCol(l) { return l > 50 ? '#22c55e' : l > 20 ? '#f59e0b' : '#ef4444'; }
 function statusClass(s) { return s === 'active' ? 'active' : s === 'coming-soon' ? 'coming-soon' : 'kicked'; }
@@ -1039,26 +1122,47 @@ function gridCardHTML(t, s) {
   const showKeg = s.show_keg_level !== '0', showPrice = s.show_price === '1';
   const showStyle = s.show_style !== '0', showProducer = s.show_producer !== '0';
   const showCat = s.show_category !== '0', showServe = s.show_serve_method !== '0';
+  const showGlass = s.show_glassware !== '0', showDate = s.show_on_tap_date !== '0';
+  const showDescription = s.show_description !== '0', showServingSize = s.show_serving_size !== '0';
+  const showNotes = s.show_tasting_notes !== '0';
   const lbl = tapLabel(t);
+  const dateStr = showDate && t.on_tap_date ? formatDate(t.on_tap_date) : null;
+
+  const stats = [];
+  if (showAbv && t.abv) stats.push({v:`${t.abv}%`, l:'ABV'});
+  if (showIbu && t.ibu) stats.push({v:t.ibu, l:'IBU'});
+  if (showPrice && t.price) stats.push({v:esc(t.price), l:'Price'});
+  if (showServingSize && t.serving_size) stats.push({v:esc(t.serving_size), l:'Serving'});
+
   return `<div class="tap-card" style="--c:${col}" onclick="openTapModal('${t.id}')">
-    <div style="display:flex;align-items:flex-start;gap:0.75rem;margin-bottom:0.6rem;padding-left:0.75rem">
-      ${t.tap_number ? `<div style="font-family:var(--font-display);font-size:2.2rem;color:var(--text-dim);line-height:1;min-width:2rem;flex-shrink:0">${t.tap_number}</div>` : ''}
-      <div style="flex:1;min-width:0">
-        ${lbl ? `<div style="font:500 0.62rem var(--font-mono);color:var(--text-dim);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:0.2rem">${lbl}</div>` : ''}
-        <div style="font-size:1.05rem;font-weight:700;line-height:1.25">${esc(t.name)}</div>
-        ${showProducer && t.producer ? `<div style="font-size:0.78rem;color:var(--text-muted);margin-top:0.1rem">${esc(t.producer)}</div>` : ''}
+    <div class="tap-card-large-header">
+      <div style="display:flex;gap:0.65rem;align-items:flex-start;flex:1;min-width:0">
+        ${t.image_url ? `<img src="${esc(t.image_url)}" style="width:46px;height:46px;object-fit:cover;border-radius:7px;border:1px solid var(--border);flex-shrink:0" onerror="this.style.display='none'">` : ''}
+        <div class="tap-card-large-meta">
+          <div class="tap-name-lg" style="font-size:1.05rem">${esc(t.name)}</div>
+          ${showProducer && t.producer ? `<div class="tap-producer-lg">${esc(t.producer)}</div>` : ''}
+          ${showStyle && t.style ? `<div class="tap-style-lg">${esc(t.style)}</div>` : ''}
+        </div>
       </div>
-      <span class="tap-status-badge ${statusClass(t.status)}">${statusChipLabel(t.status)}</span>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.35rem;flex-shrink:0">
+        ${lbl ? `<div class="tap-number-lg" style="font-size:1.6rem">${esc(lbl)}</div>` : ''}
+        <span class="tap-status-badge ${statusClass(t.status)}">${statusChipLabel(t.status)}</span>
+      </div>
     </div>
-    <div style="display:flex;flex-wrap:wrap;gap:0.3rem;margin-bottom:${showKeg?'0.55rem':'0'};padding-left:0.75rem">
-      ${showStyle && t.style ? `<span class="badge">${esc(t.style)}</span>` : ''}
-      ${showCat ? `<span class="badge cat">${categoryLabel(t.category)}</span>` : ''}
-      ${showAbv && t.abv ? `<span class="badge abv">${t.abv}%</span>` : ''}
-      ${showIbu && t.ibu ? `<span class="badge ibu">${t.ibu} IBU</span>` : ''}
-      ${showServe && t.serve_method && t.status === 'active' ? `<span class="badge serve">${serveIcon(t.serve_method)} ${esc(t.serve_method)}</span>` : ''}
-      ${showPrice && t.price ? `<span class="badge">${esc(t.price)}</span>` : ''}
+    ${stats.length ? `<div class="tap-stats-row">${stats.map(st => `<div class="tap-stat"><div class="tap-stat-val">${st.v}</div><div class="tap-stat-lbl">${st.l}</div></div>`).join('')}</div>` : ''}
+    ${showDescription && t.description ? `<div class="tap-desc-sm">${esc(truncate(t.description, 100))}</div>` : ''}
+    ${showNotes && t.tasting_notes ? `<div class="tap-notes-lg">"${esc(truncate(t.tasting_notes, 100))}"</div>` : ''}
+    <div class="tap-card-large-footer">
+      <div class="serve-row">
+        ${showCat ? `<span class="badge cat">${categoryLabel(t.category)}</span>` : ''}
+      </div>
+      <div class="serve-row">
+        ${showServe && t.serve_method && t.status === 'active' ? `<span class="serve-chip">${serveIcon(t.serve_method)} ${esc(t.serve_method)}</span>` : ''}
+        ${showGlass && t.glassware && t.status === 'active' ? `<span class="serve-chip">${glassIcon(t.glassware)} ${esc(t.glassware)}</span>` : ''}
+        ${dateStr ? `<span class="on-tap-date">Tapped ${dateStr}</span>` : ''}
+      </div>
+      ${showKeg ? `<div class="keg-bar-wrap" style="flex-shrink:0"><div class="keg-bar-track" style="width:50px"><div class="keg-bar-fill" style="width:${t.keg_level}%;background:${kg}"></div></div><span class="keg-label">${t.keg_level}%</span></div>` : ''}
     </div>
-    ${showKeg ? `<div class="keg-bar-wrap" style="padding-left:0.75rem"><div class="keg-bar-track"><div class="keg-bar-fill" style="width:${t.keg_level}%;background:${kg}"></div></div><span class="keg-label">${t.keg_level}%</span></div>` : ''}
   </div>`;
 }
 
@@ -1069,39 +1173,45 @@ function largeCardHTML(t, s) {
   const showAbv = s.show_abv !== '0', showIbu = s.show_ibu !== '0';
   const showKeg = s.show_keg_level !== '0', showPrice = s.show_price === '1';
   const showStyle = s.show_style !== '0', showProducer = s.show_producer !== '0';
+  const showCat = s.show_category !== '0';
   const showServe = s.show_serve_method !== '0', showGlass = s.show_glassware !== '0';
   const showNotes = s.show_tasting_notes !== '0', showDate = s.show_on_tap_date !== '0';
-  const lbl = tapLabel(t);
+  const showDescription = s.show_description !== '0', showServingSize = s.show_serving_size !== '0';
   const dateStr = showDate && t.on_tap_date ? formatDate(t.on_tap_date) : null;
 
   const stats = [];
   if (showAbv && t.abv) stats.push({v:`${t.abv}%`, l:'ABV'});
   if (showIbu && t.ibu) stats.push({v:t.ibu, l:'IBU'});
   if (showPrice && t.price) stats.push({v:esc(t.price), l:'Price'});
-  if (t.serving_size) stats.push({v:esc(t.serving_size), l:'Serving'});
+  if (showServingSize && t.serving_size) stats.push({v:esc(t.serving_size), l:'Serving'});
 
+  const lbl = tapLabel(t);
   return `<div class="tap-card" style="--c:${col}" onclick="openTapModal('${t.id}')">
     <div class="tap-card-color-bar" style="background:${col}"></div>
     <div class="tap-card-large-inner">
       <div class="tap-card-large-header">
-        <div class="tap-card-large-meta">
-          ${lbl ? `<div class="tap-label-line">${lbl}</div>` : ''}
-          <div class="tap-name-lg">${esc(t.name)}</div>
-          ${showProducer && t.producer ? `<div class="tap-producer-lg">${esc(t.producer)}</div>` : ''}
+        <div style="display:flex;gap:0.75rem;align-items:flex-start;flex:1;min-width:0">
+          ${t.image_url ? `<img src="${esc(t.image_url)}" style="width:58px;height:58px;object-fit:cover;border-radius:8px;border:1px solid var(--border);flex-shrink:0" onerror="this.style.display='none'">` : ''}
+          <div class="tap-card-large-meta">
+            <div class="tap-name-lg">${esc(t.name)}</div>
+            ${showProducer && t.producer ? `<div class="tap-producer-lg">${esc(t.producer)}</div>` : ''}
+            ${showStyle && t.style ? `<div class="tap-style-lg">${esc(t.style)}</div>` : ''}
+          </div>
         </div>
-        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.5rem;flex-shrink:0">
-          <span class="tap-status-badge ${statusClass(t.status)}">${statusChipLabel(t.status)}</span>
-          ${t.image_url ? `<img src="${esc(t.image_url)}" style="width:54px;height:54px;object-fit:cover;border-radius:8px;border:1px solid var(--border)" onerror="this.style.display='none'">` : ''}
-        </div>
+        ${lbl ? `<div class="tap-number-lg" style="flex-shrink:0">${esc(lbl)}</div>` : ''}
       </div>
-      ${showStyle && t.style ? `<div class="tap-style-lg">${esc(t.style)}</div>` : ''}
-      ${showNotes && t.tasting_notes ? `<div class="tap-notes-lg">"${esc(t.tasting_notes.length > 150 ? t.tasting_notes.slice(0,150) + '…' : t.tasting_notes)}"</div>` : ''}
       ${stats.length ? `<div class="tap-stats-row">${stats.map(st => `<div class="tap-stat"><div class="tap-stat-val">${st.v}</div><div class="tap-stat-lbl">${st.l}</div></div>`).join('')}</div>` : ''}
+      ${showDescription && t.description ? `<div class="tap-desc-lg">${esc(truncate(t.description, 150))}</div>` : ''}
+      ${showNotes && t.tasting_notes ? `<div class="tap-notes-lg">"${esc(t.tasting_notes.length > 150 ? t.tasting_notes.slice(0,150) + '…' : t.tasting_notes)}"</div>` : ''}
       <div class="tap-card-large-footer">
+        <div class="serve-row">
+          <span class="tap-status-badge ${statusClass(t.status)}">${statusChipLabel(t.status)}</span>
+          ${showCat ? `<span class="badge cat">${categoryLabel(t.category)}</span>` : ''}
+        </div>
         <div class="serve-row">
           ${showServe && t.serve_method && t.status === 'active' ? `<span class="serve-chip">${serveIcon(t.serve_method)} ${esc(t.serve_method)}</span>` : ''}
           ${showGlass && t.glassware && t.status === 'active' ? `<span class="serve-chip">${glassIcon(t.glassware)} ${esc(t.glassware)}</span>` : ''}
-          ${dateStr ? `<span class="on-tap-date">On tap ${dateStr}</span>` : ''}
+          ${dateStr ? `<span class="on-tap-date">Tapped ${dateStr}</span>` : ''}
         </div>
         ${showKeg ? `<div class="keg-bar-wrap" style="flex-shrink:0;gap:0.4rem"><div class="keg-bar-track" style="width:60px"><div class="keg-bar-fill" style="width:${t.keg_level}%;background:${kg}"></div></div><span class="keg-label">${t.keg_level}%</span></div>` : ''}
       </div>
@@ -1116,23 +1226,40 @@ function listCardHTML(t, s) {
   const showAbv = s.show_abv !== '0', showIbu = s.show_ibu !== '0';
   const showKeg = s.show_keg_level !== '0', showPrice = s.show_price === '1';
   const showStyle = s.show_style !== '0', showProducer = s.show_producer !== '0';
+  const showCat = s.show_category !== '0';
   const showServe = s.show_serve_method !== '0', showGlass = s.show_glassware !== '0';
   const showDate = s.show_on_tap_date !== '0';
+  const showDescription = s.show_description !== '0', showServingSize = s.show_serving_size !== '0';
+  const showNotes = s.show_tasting_notes !== '0';
   const lbl = tapLabel(t);
   const dateStr = showDate && t.on_tap_date ? formatDate(t.on_tap_date) : null;
+
+  const stats = [];
+  if (showAbv && t.abv) stats.push({v:`${t.abv}%`, l:'ABV'});
+  if (showIbu && t.ibu) stats.push({v:t.ibu, l:'IBU'});
+  if (showPrice && t.price) stats.push({v:esc(t.price), l:'Price'});
+  if (showServingSize && t.serving_size) stats.push({v:esc(t.serving_size), l:'Serving'});
+
   return `<div class="tap-card" style="--c:${col}" onclick="openTapModal('${t.id}')">
     <div class="list-color-strip" style="background:${col}"></div>
     <div class="list-body">
       ${lbl ? `<div class="list-label">${lbl}</div>` : ''}
-      <div class="list-name">${esc(t.name)}</div>
-      <div class="list-sub">${[showProducer && t.producer, showStyle && t.style].filter(Boolean).map(v => esc(v)).join(' · ')}</div>
-      <div class="list-badges">
-        ${showAbv && t.abv ? `<span class="badge abv">${t.abv}%</span>` : ''}
-        ${showIbu && t.ibu ? `<span class="badge ibu">${t.ibu} IBU</span>` : ''}
+      <div style="display:flex;gap:0.65rem;align-items:flex-start">
+        ${t.image_url ? `<img src="${esc(t.image_url)}" style="width:44px;height:44px;object-fit:cover;border-radius:7px;border:1px solid var(--border);flex-shrink:0" onerror="this.style.display='none'">` : ''}
+        <div style="flex:1;min-width:0">
+          <div class="list-name tap-name-lg">${esc(t.name)}</div>
+          ${showProducer && t.producer ? `<div class="tap-producer-lg" style="margin-top:0.1rem">${esc(t.producer)}</div>` : ''}
+          ${showStyle && t.style ? `<div class="tap-style-lg">${esc(t.style)}</div>` : ''}
+        </div>
+      </div>
+      ${stats.length ? `<div class="tap-stats-row" style="margin:0.6rem 0 0">${stats.map(st => `<div class="tap-stat"><div class="tap-stat-val">${st.v}</div><div class="tap-stat-lbl">${st.l}</div></div>`).join('')}</div>` : ''}
+      ${showDescription && t.description ? `<div class="tap-desc-sm">${esc(truncate(t.description, 130))}</div>` : ''}
+      ${showNotes && t.tasting_notes ? `<div class="tap-notes-lg">"${esc(truncate(t.tasting_notes, 130))}"</div>` : ''}
+      <div class="list-badges" style="margin-top:0.6rem">
+        ${showCat ? `<span class="badge cat">${categoryLabel(t.category)}</span>` : ''}
         ${showServe && t.serve_method && t.status === 'active' ? `<span class="badge serve">${serveIcon(t.serve_method)} ${esc(t.serve_method)}</span>` : ''}
         ${showGlass && t.glassware && t.status === 'active' ? `<span class="badge">${glassIcon(t.glassware)} ${esc(t.glassware)}</span>` : ''}
-        ${showPrice && t.price ? `<span class="badge">${esc(t.price)}</span>` : ''}
-        ${dateStr ? `<span class="badge" style="color:var(--text-dim)">On tap ${dateStr}</span>` : ''}
+        ${dateStr ? `<span class="badge" style="color:var(--text-dim)">Tapped ${dateStr}</span>` : ''}
       </div>
     </div>
     <div class="list-right">
@@ -1156,32 +1283,46 @@ function renderMobileMenu() {
   if (!filtered.length) { list.innerHTML = '<div style="text-align:center;color:var(--text-dim);padding:2rem 0">No taps active.</div>'; return; }
   const showAbv = s.show_abv !== '0', showIbu = s.show_ibu !== '0', showKeg = s.show_keg_level !== '0', showPrice = s.show_price === '1';
   const showStyle = s.show_style !== '0', showProducer = s.show_producer !== '0';
+  const showCat = s.show_category !== '0';
   const showServe = s.show_serve_method !== '0', showGlass = s.show_glassware !== '0';
   const showDate = s.show_on_tap_date !== '0';
+  const showDescription = s.show_description !== '0', showServingSize = s.show_serving_size !== '0';
+  const showNotes = s.show_tasting_notes !== '0';
   list.innerHTML = filtered.map(t => {
     const col = t.color || 'var(--accent)';
     const kg = kegCol(t.keg_level);
     const lbl = tapLabel(t);
     const dateStr = showDate && t.on_tap_date ? formatDate(t.on_tap_date) : null;
+
+    const stats = [];
+    if (showAbv && t.abv) stats.push({v:`${t.abv}%`, l:'ABV'});
+    if (showIbu && t.ibu) stats.push({v:t.ibu, l:'IBU'});
+    if (showPrice && t.price) stats.push({v:esc(t.price), l:'Price'});
+    if (showServingSize && t.serving_size) stats.push({v:esc(t.serving_size), l:'Serving'});
+
     return `<div class="menu-card" onclick="openTapModal('${t.id}')">
       <div class="menu-card-strip" style="background:${col}"></div>
       <div class="menu-card-body">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:0.75rem">
-          <div style="flex:1;min-width:0">
-            ${lbl ? `<div style="font:500 0.62rem var(--font-mono);color:var(--text-dim);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.2rem">${lbl}</div>` : ''}
-            <div style="font-weight:700;font-size:0.975rem">${esc(t.name)}</div>
-            ${showProducer && t.producer ? `<div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.1rem">${esc(t.producer)}</div>` : ''}
-            ${showStyle && t.style ? `<div style="font-size:0.72rem;color:var(--text-muted);font-style:italic;margin-top:0.1rem">${esc(t.style)}</div>` : ''}
+          <div style="display:flex;gap:0.6rem;align-items:flex-start;flex:1;min-width:0">
+            ${t.image_url ? `<img src="${esc(t.image_url)}" style="width:44px;height:44px;object-fit:cover;border-radius:7px;border:1px solid var(--border);flex-shrink:0" onerror="this.style.display='none'">` : ''}
+            <div style="flex:1;min-width:0">
+              ${lbl ? `<div class="tap-label-line">${lbl}</div>` : ''}
+              <div class="tap-name-lg" style="font-size:0.975rem">${esc(t.name)}</div>
+              ${showProducer && t.producer ? `<div class="tap-producer-lg">${esc(t.producer)}</div>` : ''}
+              ${showStyle && t.style ? `<div class="tap-style-lg">${esc(t.style)}</div>` : ''}
+            </div>
           </div>
           <span class="tap-status-badge ${statusClass(t.status)}">${statusChipLabel(t.status)}</span>
         </div>
+        ${stats.length ? `<div class="tap-stats-row">${stats.map(st => `<div class="tap-stat"><div class="tap-stat-val">${st.v}</div><div class="tap-stat-lbl">${st.l}</div></div>`).join('')}</div>` : ''}
+        ${showDescription && t.description ? `<div class="tap-desc-sm">${esc(truncate(t.description, 110))}</div>` : ''}
+        ${showNotes && t.tasting_notes ? `<div class="tap-notes-lg">"${esc(truncate(t.tasting_notes, 110))}"</div>` : ''}
         <div style="display:flex;flex-wrap:wrap;gap:0.3rem;margin-top:0.5rem">
-          ${showAbv && t.abv ? `<span class="badge abv">${t.abv}%</span>` : ''}
-          ${showIbu && t.ibu ? `<span class="badge ibu">${t.ibu} IBU</span>` : ''}
+          ${showCat ? `<span class="badge cat">${categoryLabel(t.category)}</span>` : ''}
           ${showServe && t.serve_method && t.status === 'active' ? `<span class="badge serve">${serveIcon(t.serve_method)} ${esc(t.serve_method)}</span>` : ''}
           ${showGlass && t.glassware && t.status === 'active' ? `<span class="badge">${glassIcon(t.glassware)} ${esc(t.glassware)}</span>` : ''}
-          ${showPrice && t.price ? `<span class="badge">${esc(t.price)}</span>` : ''}
-          ${dateStr ? `<span class="badge" style="color:var(--text-dim)">On tap ${dateStr}</span>` : ''}
+          ${dateStr ? `<span class="badge" style="color:var(--text-dim)">Tapped ${dateStr}</span>` : ''}
         </div>
         ${showKeg ? `<div class="keg-bar-wrap" style="margin-top:0.5rem"><div class="keg-bar-track"><div class="keg-bar-fill" style="width:${t.keg_level}%;background:${kg}"></div></div><span class="keg-label">${t.keg_level}%</span></div>` : ''}
       </div>
@@ -1204,30 +1345,31 @@ async function openTapModal(id) {
   document.getElementById('modal-tap-producer').textContent = tap.producer || '';
 
   const showAbv = s.show_abv !== '0', showIbu = s.show_ibu !== '0', showKeg = s.show_keg_level !== '0', showPrice = s.show_price === '1';
+  const showServingSize = s.show_serving_size !== '0';
   const kg = kegCol(tap.keg_level);
   let html = '';
+
+  // Badges (style / category / status)
+  html += `<div style="display:flex;flex-wrap:wrap;gap:0.3rem">`;
+  if (tap.style) html += `<span class="badge">${esc(tap.style)}</span>`;
+  html += `<span class="badge cat">${categoryLabel(tap.category)}</span>`;
+  html += `<span class="tap-status-badge ${statusClass(tap.status)}">${statusLabel(tap.status)}</span>`;
+  html += `</div>`;
 
   // Stats
   const stats = [];
   if (showAbv && tap.abv) stats.push({v:`${tap.abv}%`, l:'ABV'});
   if (showIbu && tap.ibu) stats.push({v:tap.ibu, l:'IBU'});
-  if (tap.serving_size) stats.push({v:esc(tap.serving_size), l:'Serving'});
+  if (showServingSize && tap.serving_size) stats.push({v:esc(tap.serving_size), l:'Serving'});
   if (showPrice && tap.price) stats.push({v:esc(tap.price), l:'Price'});
-  if (stats.length) html += `<div class="stat-row">${stats.map(st => `<div class="stat"><div class="stat-val">${st.v}</div><div class="stat-lbl">${st.l}</div></div>`).join('')}</div>`;
-
-  // Badges
-  html += `<div style="display:flex;flex-wrap:wrap;gap:0.3rem;margin-top:0.75rem">`;
-  if (tap.style) html += `<span class="badge">${esc(tap.style)}</span>`;
-  html += `<span class="badge cat">${categoryLabel(tap.category)}</span>`;
-  html += `<span class="tap-status-badge ${statusClass(tap.status)}">${statusLabel(tap.status)}</span>`;
-  html += `</div>`;
+  if (stats.length) html += `<div class="stat-row" style="margin-top:0.75rem">${stats.map(st => `<div class="stat"><div class="stat-val">${st.v}</div><div class="stat-lbl">${st.l}</div></div>`).join('')}</div>`;
 
   // Serving details section
   if (tap.serve_method || tap.glassware || tap.on_tap_date) {
     html += `<div class="modal-section"><div class="modal-section-title">Serving</div><div class="serve-details-grid">`;
     if (tap.serve_method) html += `<div class="serve-detail-item">${serveIcon(tap.serve_method)} <span class="sdi-label">Method</span><span class="sdi-val">${esc(tap.serve_method)}</span></div>`;
     if (tap.glassware) html += `<div class="serve-detail-item">${glassIcon(tap.glassware)} <span class="sdi-label">Glass</span><span class="sdi-val">${esc(tap.glassware)}</span></div>`;
-    if (tap.on_tap_date) html += `<div class="serve-detail-item">📅 <span class="sdi-label">On tap</span><span class="sdi-val">${formatDate(tap.on_tap_date)}</span></div>`;
+    if (tap.on_tap_date) html += `<div class="serve-detail-item">📅 <span class="sdi-label">Tapped</span><span class="sdi-val">${formatDate(tap.on_tap_date)}</span></div>`;
     html += `</div></div>`;
   }
 
@@ -1445,9 +1587,10 @@ async function deleteTap() {
 function loadSettingsForm() {
   const s = state.settings;
   document.getElementById('s-brewery-name').value = s.brewery_name || s.taproom_name || '';
-  document.getElementById('s-establishment-name').value = s.establishment_name || s.taproom_name || '';
+  document.getElementById('s-establishment-name').value = s.establishment_name || '';
   document.getElementById('s-tagline').value = s.tagline || '';
   document.getElementById('s-layout').value = s.display_layout || 'grid';
+  document.getElementById('s-theme').value = s.display_theme || 'dark';
 
   // Accent color — sync picker + text
   const acc = s.accent_color || '#f59e0b';
@@ -1469,6 +1612,10 @@ function loadSettingsForm() {
     currentWrap.style.display = 'none';
   }
   document.getElementById('s-use-logo-as-brand').checked = s.use_logo_as_brand === '1';
+  const logoSize = s.logo_size || '64';
+  document.getElementById('s-logo-size').value = logoSize;
+  document.getElementById('logo-size-label').textContent = logoSize + 'px';
+  toggleLogoSizeRow();
 
   // Visibility toggles
   document.getElementById('s-show-abv').checked = s.show_abv !== '0';
@@ -1482,6 +1629,8 @@ function loadSettingsForm() {
   document.getElementById('s-show-glassware').checked = s.show_glassware !== '0';
   document.getElementById('s-show-tasting-notes').checked = s.show_tasting_notes !== '0';
   document.getElementById('s-show-on-tap-date').checked = s.show_on_tap_date !== '0';
+  document.getElementById('s-show-description').checked = s.show_description !== '0';
+  document.getElementById('s-show-serving-size').checked = s.show_serving_size !== '0';
 
   // Pipeline
   document.getElementById('s-pipeline-enabled').checked = s.pipeline_enabled !== '0';
@@ -1495,6 +1644,9 @@ function loadSettingsForm() {
   if (s.brewfather_api_key) document.getElementById('bf-api-key').placeholder = '••••••••••••••••';
 }
 
+function toggleLogoSizeRow() {
+  document.getElementById('logo-size-row').style.display = document.getElementById('s-use-logo-as-brand').checked ? 'block' : 'none';
+}
 function setLogoTab(tab) {
   const isUrl = tab === 'url';
   document.getElementById('logo-url-panel').style.display = isUrl ? 'block' : 'none';
@@ -1583,9 +1735,11 @@ async function saveSettings() {
       establishment_name: document.getElementById('s-establishment-name').value,
       tagline: document.getElementById('s-tagline').value,
       display_layout: document.getElementById('s-layout').value,
+      display_theme: document.getElementById('s-theme').value,
       accent_color: document.getElementById('s-accent').value,
       logo_url: document.getElementById('s-logo').value,
       use_logo_as_brand: document.getElementById('s-use-logo-as-brand').checked ? '1' : '0',
+      logo_size: document.getElementById('s-logo-size').value,
       show_abv: document.getElementById('s-show-abv').checked ? '1' : '0',
       show_ibu: document.getElementById('s-show-ibu').checked ? '1' : '0',
       show_price: document.getElementById('s-show-price').checked ? '1' : '0',
@@ -1597,6 +1751,8 @@ async function saveSettings() {
       show_glassware: document.getElementById('s-show-glassware').checked ? '1' : '0',
       show_tasting_notes: document.getElementById('s-show-tasting-notes').checked ? '1' : '0',
       show_on_tap_date: document.getElementById('s-show-on-tap-date').checked ? '1' : '0',
+      show_description: document.getElementById('s-show-description').checked ? '1' : '0',
+      show_serving_size: document.getElementById('s-show-serving-size').checked ? '1' : '0',
       pipeline_enabled: document.getElementById('s-pipeline-enabled').checked ? '1' : '0',
       pipeline_title: document.getElementById('s-pipeline-title').value || 'Coming Soon',
       pipeline_refresh_mins: document.getElementById('s-pipeline-refresh').value || '0',

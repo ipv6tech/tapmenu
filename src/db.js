@@ -148,6 +148,8 @@ function initSchema() {
       ('show_glassware', '1'),
       ('show_tasting_notes', '1'),
       ('show_on_tap_date', '1'),
+      ('show_description', '1'),
+      ('show_serving_size', '1'),
       ('pipeline_enabled', '1'),
       ('pipeline_title', 'Coming Soon'),
       ('pipeline_refresh_mins', '0'),
@@ -155,6 +157,7 @@ function initSchema() {
       ('accent_color', '#f59e0b'),
       ('logo_url', ''),
       ('use_logo_as_brand', '0'),
+      ('logo_size', '64'),
       ('display_layout', 'cards'),
       ('brewfather_api_user_id', ''),
       ('brewfather_api_key', '');
