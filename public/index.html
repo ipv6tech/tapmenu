@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CellarMenu Pro</title>
+<title>Tap Menu</title>
 <link rel="icon" id="favicon">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,700;1,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -321,7 +321,7 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px;
 <nav id="app-nav">
   <div class="nav-brand" onclick="navigate('display')">
     <span id="nav-brand-icon">🍺</span><img id="nav-brand-logo" class="nav-mini-logo" src="" alt="" style="display:none">
-    <span id="nav-brand-name">CellarMenu Pro</span>
+    <span id="nav-brand-name">Tap Menu</span>
   </div>
   <button class="hamburger-btn" onclick="toggleNavPanel()" aria-label="Open menu">☰</button>
 </nav>
@@ -338,7 +338,7 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px;
 <div id="display-page" class="page active">
   <div class="display-header">
     <img class="logo" id="display-logo" src="" alt="" style="display:none">
-    <h1 id="display-title">CellarMenu Pro</h1>
+    <h1 id="display-title">Tap Menu</h1>
     <div class="tagline" id="display-tagline">What's on tap</div>
   </div>
   <div class="tap-grid layout-grid" id="display-grid"></div>
@@ -356,7 +356,7 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px;
 <div id="menu-page" class="page">
   <div class="menu-wrap">
     <div class="menu-header">
-      <h1 id="menu-title">My Taproom</h1>
+      <h1 id="menu-title">Tap Menu</h1>
       <div class="tagline" id="menu-tagline">What's on tap</div>
     </div>
     <div class="menu-cats" id="menu-cat-filter"></div>
@@ -886,12 +886,12 @@ async function loadSettings() {
 }
 
 function applySettings(s) {
-  const breweryName = s.brewery_name || s.taproom_name || 'CellarMenu Pro';
+  const breweryName = s.brewery_name || s.taproom_name || 'Tap Menu';
   const displayName = s.establishment_name || breweryName;
   const useLogoAsBrand = s.use_logo_as_brand === '1';
   const hasLogo = !!s.logo_url;
 
-  document.title = breweryName ? `${breweryName} — Draft List` : 'CellarMenu Pro';
+  document.title = breweryName ? `${breweryName} — Draft List` : 'Tap Menu';
 
   const faviconEl = document.getElementById('favicon');
   if (faviconEl) {

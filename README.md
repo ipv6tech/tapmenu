@@ -1,6 +1,13 @@
-# 🍺 CellarMenu Pro — Self-Hosted Digital Draft List
+# 🍺 Tap Menu: Self-Hosted Digital Draft List
 
-A beautiful, self-hosted digital menu for your home taproom, bar, or kegerator setup. Features a full-screen display view, mobile-friendly menu, and an admin panel to manage everything.
+<!--
+  Replace OWNER below with your GitHub username/org once this is pushed,
+  so the badges and image references point at the right place.
+-->
+[![Publish Docker image](https://github.com/OWNER/tap-menu/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/OWNER/tap-menu/actions/workflows/docker-publish.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+A self-hosted digital menu for your home taproom, bar, or kegerator setup. Features a full-screen display view, mobile-friendly menu, and an admin panel to manage everything.
 
 ---
 
@@ -9,7 +16,7 @@ A beautiful, self-hosted digital menu for your home taproom, bar, or kegerator s
 - **📺 Display View** — Full-screen menu for a TV or monitor behind the bar, with Grid, Large Card, and List layouts (all sharing the same fields, so switching layouts never hides information)
 - **📱 Mobile Menu** — Tap-friendly menu guests can scan via QR, matching the fields/formatting of the display view
 - **⚙️ Admin Panel** — Add, edit, delete taps with a clean drawer UI; click any row in the taps table to edit it directly
-- **🍺 All Beverage Types** — Beer, craft, IPA, stout, mead, cider, seltzer, wine, cocktails, spirits, kombucha, cold brew, and more
+- **🍺 All Beverage Types** — Beer, mead, cider, seltzer, wine, cocktails, spirits, kombucha, cold brew, and more
 - **📊 Keg Level Tracking** — Visual keg gauges with color indicators
 - **🔗 Untappd Links** — Link any tap directly to its Untappd page
 - **📱 QR Codes** — Auto-generated per tap; scan to see full tasting notes
@@ -28,8 +35,8 @@ A beautiful, self-hosted digital menu for your home taproom, bar, or kegerator s
 ### 1. Clone / download this project
 
 ```bash
-git clone <your-repo> taproom
-cd taproom
+git clone <your-repo> tap-menu
+cd tap-menu
 ```
 
 ### 2. Edit the session secret
@@ -55,6 +62,23 @@ On first visit to `/admin`, you'll be prompted to create your admin account.
 
 ---
 
+## Run the Published Image (GHCR)
+
+Instead of building locally, you can pull a pre-built image published to GitHub Container Registry on every tagged release:
+
+```bash
+docker run -d \
+  --name tapmenu \
+  -p 3000:3000 \
+  -v tapmenu-data:/data \
+  -e SESSION_SECRET=change-me-to-a-long-random-string \
+  ghcr.io/OWNER/tap-menu:latest
+```
+
+Or point `docker-compose.yml`'s `build: .` at `image: ghcr.io/OWNER/tap-menu:latest` instead. Images are built for both `linux/amd64` and `linux/arm64` (Raspberry Pi, Apple Silicon, etc.), tagged by version (`:1.2.3`, `:1.2`, `:1`) plus a rolling `:latest`.
+
+---
+
 ## Ports & Networking
 
 By default the app runs on port **3000**. To change it, edit `docker-compose.yml`:
@@ -70,25 +94,25 @@ The app runs on HTTP. Put your TLS termination at the reverse proxy level. Examp
 
 ```yaml
 labels:
-  - "traefik.http.routers.taproom.rule=Host(`taps.yourdomain.com`)"
-  - "traefik.http.services.taproom.loadbalancer.server.port=3000"
+  - "traefik.http.routers.tapmenu.rule=Host(`taps.yourdomain.com`)"
+  - "traefik.http.services.tapmenu.loadbalancer.server.port=3000"
 ```
 
 ---
 
 ## Data Persistence
 
-All data is stored in a SQLite database at `/data/taproom.db` inside the container, plus an `/data/uploads` directory holding any uploaded logos and beer images — both live on the same Docker named volume (`taproom-data`), so they persist across container restarts, rebuilds, and updates.
+All data is stored in a SQLite database at `/data/taproom.db` inside the container, plus an `/data/uploads` directory holding any uploaded logos and beer images — both live on the same Docker named volume (`tapmenu-data`), so they persist across container restarts, rebuilds, and updates.
 
 To back up (database + uploads):
 ```bash
-docker cp taproom:/data ./taproom-backup
+docker cp tapmenu:/data ./tapmenu-backup
 ```
 
 To restore:
 ```bash
-docker cp ./taproom-backup/. taproom:/data
-docker restart taproom
+docker cp ./tapmenu-backup/. tapmenu:/data
+docker restart tapmenu
 ```
 
 ---
@@ -98,7 +122,7 @@ docker restart taproom
 | Variable | Default | Description |
 |---|---|---|
 | `PORT` | `3000` | HTTP port |
-| `SESSION_SECRET` | `taproom-secret-...` | **Change this!** Cookie signing secret |
+| `SESSION_SECRET` | `tapmenu-secret-...` | **Change this!** Cookie signing secret |
 | `DB_PATH` | `/data/taproom.db` | SQLite database path |
 | `UPLOADS_DIR` | directory of `DB_PATH` + `/uploads` | Where uploaded logos and beer images are stored |
 
@@ -159,3 +183,15 @@ App runs at http://localhost:3000
 - **Fonts:** Bebas Neue + DM Sans + DM Mono
 - **QR:** qrcode npm package
 - **Auth:** express-session + bcryptjs
+
+---
+
+## Contributing
+
+Issues and PRs are welcome — this is a small self-hosted project, so keep changes focused and test them against a real Docker rebuild before submitting (see `docker compose build && docker compose up -d`). There's no formal test suite yet; that's a good place to contribute too.
+
+---
+
+## License
+
+[MIT](LICENSE) — do whatever you want with it, just keep the copyright notice.

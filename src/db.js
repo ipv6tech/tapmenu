@@ -132,7 +132,7 @@ function initSchema() {
     );
 
     INSERT OR IGNORE INTO settings (key, value) VALUES
-      ('taproom_name', 'My Taproom'),
+      ('taproom_name', 'Tap Menu'),
       ('brewery_name', ''),
       ('establishment_name', ''),
       ('tagline', 'What''s on tap'),

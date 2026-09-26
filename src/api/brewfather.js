@@ -351,7 +351,7 @@ router.post('/sync-all', requireAuth, async (req, res) => {
   res.json(results);
 });
 
-// Map Brewfather batch status → CellarMenu tap status
+// Map Brewfather batch status → Tap Menu tap status
 function brewfatherStatusToTapStatus(bfStatus) {
   switch (bfStatus) {
     case 'Planning':

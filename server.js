@@ -24,7 +24,7 @@ async function start() {
   app.use(express.urlencoded({ extended: true }));
 
   app.use(session({
-    secret: process.env.SESSION_SECRET || 'taproom-secret-change-me-in-production',
+    secret: process.env.SESSION_SECRET || 'tapmenu-secret-change-me-in-production',
     resave: false,
     saveUninitialized: false,
     cookie: { secure: false, maxAge: 7 * 24 * 60 * 60 * 1000 }
@@ -40,7 +40,7 @@ async function start() {
   app.get('/*splat', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 
   app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🍺 Taproom running at http://localhost:${PORT}`);
+    console.log(`🍺 Tap Menu running at http://localhost:${PORT}`);
     console.log(`   Admin panel: http://localhost:${PORT}/admin`);
   });
 }

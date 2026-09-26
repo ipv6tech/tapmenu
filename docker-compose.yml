@@ -1,12 +1,12 @@
 services:
-  taproom:
+  tapmenu:
     build: .
-    container_name: taproom
+    container_name: tapmenu
     restart: unless-stopped
     ports:
       - "3000:3000"
     volumes:
-      - taproom-data:/data
+      - tapmenu-data:/data
     environment:
       - PORT=3000
       - SESSION_SECRET=change-me-to-a-long-random-string
@@ -19,5 +19,8 @@ services:
       retries: 3
 
 volumes:
-  taproom-data:
+  tapmenu-data:
+    # Pinned to the pre-existing volume name so renaming the service doesn't
+    # orphan the data from the previous "taproom" container.
+    name: app_taproom-data
     driver: local
