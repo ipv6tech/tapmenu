@@ -9,6 +9,9 @@
 
 A self-hosted digital menu for your home taproom, bar, or kegerator setup. Features a full-screen display view, mobile-friendly menu, and an admin panel to manage everything.
 
+![Tap Menu screenshot](TapMenu-Cards.png)
+
+
 ---
 
 ## Features
