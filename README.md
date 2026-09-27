@@ -4,7 +4,7 @@
   Replace OWNER below with your GitHub username/org once this is pushed,
   so the badges and image references point at the right place.
 -->
-[![Publish Docker image](https://github.com/OWNER/tap-menu/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/ipv6tech/tapmenu/actions/workflows/docker-publish.yml)
+[![Publish Docker image](https://github.com/ipv6tech/tapmenu/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/ipv6tech/tapmenu/actions/workflows/docker-publish.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 A self-hosted digital menu for your home taproom, bar, or kegerator setup. Features a full-screen display view, mobile-friendly menu, and an admin panel to manage everything.
