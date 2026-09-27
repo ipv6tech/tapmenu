@@ -4,7 +4,7 @@
   Replace OWNER below with your GitHub username/org once this is pushed,
   so the badges and image references point at the right place.
 -->
-[![Publish Docker image](https://github.com/OWNER/tap-menu/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/OWNER/tap-menu/actions/workflows/docker-publish.yml)
+[![Publish Docker image](https://github.com/OWNER/tap-menu/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/ipv6tech/tapmenu/actions/workflows/docker-publish.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 A self-hosted digital menu for your home taproom, bar, or kegerator setup. Features a full-screen display view, mobile-friendly menu, and an admin panel to manage everything.
@@ -75,10 +75,10 @@ docker run -d \
   -p 3000:3000 \
   -v tapmenu-data:/data \
   -e SESSION_SECRET=change-me-to-a-long-random-string \
-  ghcr.io/OWNER/tap-menu:latest
+  ghcr.io/ipv6tech/tapmenu:latest
 ```
 
-Or point `docker-compose.yml`'s `build: .` at `image: ghcr.io/OWNER/tap-menu:latest` instead. Images are built for both `linux/amd64` and `linux/arm64` (Raspberry Pi, Apple Silicon, etc.), tagged by version (`:1.2.3`, `:1.2`, `:1`) plus a rolling `:latest`.
+Or point `docker-compose.yml`'s `build: .` at `image: ghcr.io/ipv6tech/tapmenu:latest` instead. Images are built for both `linux/amd64` and `linux/arm64` (Raspberry Pi, Apple Silicon, etc.), tagged by version (`:1.2.3`, `:1.2`, `:1`) plus a rolling `:latest`.
 
 ---
 
