@@ -390,6 +390,7 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px;
       <aside class="admin-sidebar">
         <div class="sidebar-label">Taps</div>
         <button class="sidebar-btn active" id="sb-taps" onclick="showPanel('taps')"><span class="icon">🍺</span> All Taps</button>
+        <button class="sidebar-btn" id="sb-coming-soon" onclick="showPanel('coming-soon')"><span class="icon">🚧</span> Coming Soon</button>
         <button class="sidebar-btn" id="sb-add" onclick="openDrawer()"><span class="icon">➕</span> Add Tap</button>
         <div class="sidebar-label" style="margin-top:0.5rem">App</div>
         <button class="sidebar-btn" id="sb-settings" onclick="showPanel('settings')"><span class="icon">⚙️</span> Settings</button>
@@ -415,6 +416,15 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px;
               <tbody id="admin-taps-tbody"></tbody>
             </table>
           </div>
+        </div>
+
+        <!-- Coming Soon Panel -->
+        <div class="admin-panel" id="panel-coming-soon">
+          <div class="admin-panel-header">
+            <div class="panel-title">Coming Soon</div>
+          </div>
+          <div id="available-taps-indicator" style="margin-bottom:1rem;font-size:0.85rem;color:var(--text-muted)"></div>
+          <div id="coming-soon-groups"></div>
         </div>
 
         <!-- Settings Panel -->
@@ -532,11 +542,24 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px;
                 <input class="form-input" id="s-pipeline-refresh" type="number" min="0" placeholder="0">
               </div>
             </div>
+            <div class="form-row" style="margin-top:0.875rem">
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">Packaged Stage Label <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-dim)">(e.g. "On Deck", "Up Next")</span></label>
+                <input class="form-input" id="s-pipeline-packaged-label" type="text" placeholder="Packaged">
+              </div>
+            </div>
           </div>
           <div class="settings-card">
             <h3>Pages</h3>
             <div class="toggle-row"><span class="toggle-label">Enable Menu page</span><label class="toggle"><input type="checkbox" id="s-menu-page-enabled"><span class="toggle-slider"></span></label></div>
             <div class="toggle-row" style="border-bottom:none"><span class="toggle-label">Enable QR codes</span><label class="toggle"><input type="checkbox" id="s-show-qr-codes"><span class="toggle-slider"></span></label></div>
+          </div>
+          <div class="settings-card">
+            <h3>Taps</h3>
+            <div class="form-group" style="margin-bottom:0">
+              <label class="form-label">Total Taps <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-dim)">(used to compute which tap numbers are available)</span></label>
+              <input class="form-input" id="s-tap-count" type="number" min="1" style="max-width:120px" placeholder="12">
+            </div>
           </div>
           <div class="settings-card">
             <h3>Custom CSS</h3>
@@ -668,7 +691,7 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px;
       <div class="form-row">
         <div class="form-group" style="margin-bottom:0">
           <label class="form-label">Status</label>
-          <select class="form-select" id="f-status">
+          <select class="form-select" id="f-status" onchange="toggleStageField()">
             <option value="active">On Tap</option>
             <option value="coming-soon">Coming Soon</option>
             <option value="kicked">Kicked / Empty</option>
@@ -679,6 +702,15 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px;
           <label class="form-label">Date Tapped</label>
           <input class="form-input" id="f-on-tap-date" type="date">
         </div>
+      </div>
+      <div class="form-group" id="f-stage-group" style="display:none">
+        <label class="form-label">Pipeline Stage</label>
+        <select class="form-select" id="f-stage">
+          <option value="planned">Planned</option>
+          <option value="brewing">Brewing</option>
+          <option value="fermenting">Fermenting</option>
+          <option value="packaged" id="f-stage-packaged-option">Packaged</option>
+        </select>
       </div>
     </div>
 
@@ -974,7 +1006,7 @@ async function loadTaps() {
     state.taps = await api('GET', '/taps');
     renderDisplay();
     renderMobileMenu();
-    if (state.authenticated) renderAdminTable();
+    if (state.authenticated) { renderAdminTable(); renderComingSoonPanel(); }
   } catch(e) {}
 }
 
@@ -1083,7 +1115,10 @@ function renderPipeline() {
   document.getElementById('pipeline-row').innerHTML = pipeline.map(t => {
     const col = t.color || 'var(--accent)';
     // Derive a readable status label
-    const statusLabel = t.brewfather_id ? 'Fermenting' : 'Coming Soon';
+    const STAGE_LABELS = { planned: 'Planned', brewing: 'Brewing', fermenting: 'Fermenting' };
+    const statusLabel = t.pipeline_stage === 'packaged'
+      ? (state.settings.pipeline_packaged_label || 'Packaged')
+      : (STAGE_LABELS[t.pipeline_stage] || 'Coming Soon');
 
     // Fermentation progress — only if we have OG + current gravity data
     let progressBar = '';
@@ -1432,7 +1467,7 @@ async function showAdminView() {
 }
 function showLoginForm() { document.getElementById('admin-login').style.display='block'; document.getElementById('admin-setup').style.display='none'; document.getElementById('admin-content').style.display='none'; }
 function showSetupForm() { document.getElementById('admin-login').style.display='none'; document.getElementById('admin-setup').style.display='block'; document.getElementById('admin-content').style.display='none'; }
-function showAuthContent() { document.getElementById('admin-login').style.display='none'; document.getElementById('admin-setup').style.display='none'; document.getElementById('admin-content').style.display='block'; renderAdminTable(); loadSettingsForm(); }
+function showAuthContent() { document.getElementById('admin-login').style.display='none'; document.getElementById('admin-setup').style.display='none'; document.getElementById('admin-content').style.display='block'; renderAdminTable(); renderComingSoonPanel(); loadSettingsForm(); }
 async function doLogin() {
   try { await api('POST', '/auth/login', {username: document.getElementById('login-user').value, password: document.getElementById('login-pass').value}); state.authenticated=true; document.getElementById('login-error').style.display='none'; showAuthContent(); toast('Welcome back!','success'); }
   catch(e) { const el=document.getElementById('login-error'); el.textContent=e.message; el.style.display='block'; }
@@ -1448,6 +1483,7 @@ function showPanel(name) {
   document.getElementById('panel-'+name)?.classList.add('active');
   document.getElementById('sb-'+name)?.classList.add('active');
   if (name === 'integrations') renderSyncHistory();
+  if (name === 'coming-soon') renderComingSoonPanel();
 }
 function renderAdminTable() {
   const tbody = document.getElementById('admin-taps-tbody');
@@ -1482,6 +1518,86 @@ function renderAdminTable() {
   </tr>`).join('');
 }
 
+// A tap number is occupied if any non-deleted row with status='active' has it.
+// Everything else in [1..tap_count] is available (never used, or currently kicked/hidden).
+function computeAvailableTapNumbers() {
+  const tapCount = parseInt(state.settings.tap_count, 10) || 12;
+  const occupied = new Set(
+    state.taps.filter(t => t.status === 'active' && t.tap_number).map(t => t.tap_number)
+  );
+  const available = [];
+  for (let n = 1; n <= tapCount; n++) {
+    if (!occupied.has(n)) available.push(n);
+  }
+  return available;
+}
+
+const PIPELINE_STAGE_ORDER = ['planned', 'brewing', 'fermenting', 'packaged'];
+function pipelineStageGroupLabel(stage) {
+  if (stage === 'packaged') return state.settings.pipeline_packaged_label || 'Packaged';
+  if (stage === 'planned') return 'Planned';
+  if (stage === 'brewing') return 'Brewing';
+  if (stage === 'fermenting') return 'Fermenting';
+  return 'Unassigned';
+}
+
+function renderComingSoonPanel() {
+  const available = computeAvailableTapNumbers();
+  document.getElementById('available-taps-indicator').textContent =
+    available.length ? `Available taps: ${available.join(', ')}` : 'No taps available';
+
+  const comingSoon = state.taps.filter(t => t.status === 'coming-soon');
+  const groups = {};
+  for (const stage of [...PIPELINE_STAGE_ORDER, null]) {
+    groups[stage ?? 'unassigned'] = comingSoon.filter(t => (t.pipeline_stage || null) === stage);
+  }
+
+  const container = document.getElementById('coming-soon-groups');
+  const sections = [...PIPELINE_STAGE_ORDER, 'unassigned'].map(key => {
+    const stageKey = key === 'unassigned' ? null : key;
+    const taps = groups[key];
+    if (!taps.length) return '';
+    const rows = taps.map(t => `
+      <div onclick="openDrawer('${t.id}')" style="display:flex;align-items:center;justify-content:space-between;padding:0.6rem 0.875rem;background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:0.5rem;cursor:pointer">
+        <div style="display:flex;align-items:center;gap:0.5rem">
+          <span style="font-weight:600">${esc(t.name)}</span>
+          ${t.brewfather_id ? '<span class="integration-badge">🍺 Brewfather</span>' : ''}
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="event.stopPropagation();promoteTap('${t.id}')" ${available.length ? '' : 'disabled title="No taps available"'}>→ Put on Tap</button>
+      </div>
+    `).join('');
+    return `
+      <div style="margin-bottom:1.25rem">
+        <div style="font:600 0.72rem var(--font-mono);color:var(--text-dim);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.5rem">${esc(pipelineStageGroupLabel(stageKey))}</div>
+        ${rows}
+      </div>
+    `;
+  }).join('');
+
+  container.innerHTML = sections || '<div class="empty-state">Nothing in the pipeline right now.</div>';
+}
+
+async function promoteTap(tapId) {
+  const available = computeAvailableTapNumbers();
+  if (!available.length) { toast('No taps available', 'error'); return; }
+
+  const choice = prompt(`Which tap number? Available: ${available.join(', ')}`, String(available[0]));
+  if (choice === null) return;
+  const tapNumber = parseInt(choice, 10);
+  if (!available.includes(tapNumber)) {
+    toast(`Tap ${choice} is not available`, 'error');
+    return;
+  }
+
+  try {
+    await api('POST', `/taps/${tapId}/promote`, { tap_number: tapNumber });
+    toast('Beer moved onto tap!', 'success');
+    await loadTaps();
+  } catch(e) {
+    toast(e.message, 'error');
+  }
+}
+
 // ════════════════════════════════ DRAWER ════════════════════════════════
 function openDrawer(id) {
   state.editingId = id || null;
@@ -1494,6 +1610,7 @@ function openDrawer(id) {
     document.getElementById('f-num').value = t.tap_number || '';
     document.getElementById('f-tap-label').value = t.tap_label || '';
     document.getElementById('f-status').value = t.status || 'active';
+    document.getElementById('f-stage').value = t.pipeline_stage || 'planned';
     document.getElementById('f-on-tap-date').value = t.on_tap_date || '';
     document.getElementById('f-name').value = t.name || '';
     document.getElementById('f-producer').value = t.producer || '';
@@ -1522,6 +1639,7 @@ function openDrawer(id) {
   } else {
     ['f-id','f-num','f-tap-label','f-name','f-producer','f-style','f-abv','f-ibu','f-price','f-desc','f-notes','f-serving','f-color','f-image','f-untappd','f-brewfather','f-brewersfriend','f-grainfather'].forEach(i => { const el=document.getElementById(i); if(el) el.value=''; });
     document.getElementById('f-status').value = 'active';
+    document.getElementById('f-stage').value = 'planned';
     document.getElementById('f-category').value = 'beer';
     document.getElementById('f-serve-method').value = '';
     document.getElementById('f-glassware').value = '';
@@ -1534,6 +1652,7 @@ function openDrawer(id) {
   }
   setImageTab('url');
   clearTapImageFile();
+  toggleStageField();
   document.getElementById('drawer-overlay').classList.add('open');
   document.getElementById('tap-drawer').classList.add('open');
 }
@@ -1560,6 +1679,9 @@ async function saveTap() {
     tap_number: document.getElementById('f-num').value || null,
     tap_label: document.getElementById('f-tap-label').value || null,
     name, status: document.getElementById('f-status').value,
+    pipeline_stage: document.getElementById('f-status').value === 'coming-soon'
+      ? document.getElementById('f-stage').value
+      : null,
     on_tap_date: document.getElementById('f-on-tap-date').value || null,
     producer: document.getElementById('f-producer').value || null,
     category: document.getElementById('f-category').value,
@@ -1646,6 +1768,8 @@ function loadSettingsForm() {
   document.getElementById('s-pipeline-enabled').checked = s.pipeline_enabled !== '0';
   document.getElementById('s-pipeline-title').value = s.pipeline_title || 'Coming Soon';
   document.getElementById('s-pipeline-refresh').value = s.pipeline_refresh_mins || '0';
+  document.getElementById('s-pipeline-packaged-label').value = s.pipeline_packaged_label || 'Packaged';
+  document.getElementById('s-tap-count').value = s.tap_count || '12';
 
   // QR codes / pages
   document.getElementById('s-show-qr-codes').checked = s.show_qr_codes !== '0';
@@ -1660,6 +1784,11 @@ function loadSettingsForm() {
 
 function toggleLogoSizeRow() {
   document.getElementById('logo-size-row').style.display = document.getElementById('s-use-logo-as-brand').checked ? 'block' : 'none';
+}
+function toggleStageField() {
+  const isComingSoon = document.getElementById('f-status').value === 'coming-soon';
+  document.getElementById('f-stage-group').style.display = isComingSoon ? 'block' : 'none';
+  document.getElementById('f-stage-packaged-option').textContent = state.settings.pipeline_packaged_label || 'Packaged';
 }
 function setLogoTab(tab) {
   const isUrl = tab === 'url';
@@ -1770,11 +1899,13 @@ async function saveSettings() {
       pipeline_enabled: document.getElementById('s-pipeline-enabled').checked ? '1' : '0',
       pipeline_title: document.getElementById('s-pipeline-title').value || 'Coming Soon',
       pipeline_refresh_mins: document.getElementById('s-pipeline-refresh').value || '0',
+      pipeline_packaged_label: document.getElementById('s-pipeline-packaged-label').value || 'Packaged',
+      tap_count: document.getElementById('s-tap-count').value || '12',
       show_qr_codes: document.getElementById('s-show-qr-codes').checked ? '1' : '0',
       menu_page_enabled: document.getElementById('s-menu-page-enabled').checked ? '1' : '0',
       custom_css: document.getElementById('s-custom-css').value || '',
     });
-    await loadSettings(); renderDisplay(); toast('Settings saved!', 'success');
+    await loadSettings(); renderDisplay(); if (state.authenticated) renderComingSoonPanel(); toast('Settings saved!', 'success');
   } catch(e) { toast(e.message, 'error'); }
 }
 async function changePassword() {

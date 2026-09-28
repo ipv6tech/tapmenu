@@ -36,7 +36,7 @@ router.post('/', requireAuth, (req, res) => {
     tasting_notes, category, status, keg_level, untappd_url,
     brewfather_id, brewers_friend_id, grainfather_id,
     external_source, external_id, serving_size, serve_method, glassware,
-    on_tap_date, price, color, image_url
+    on_tap_date, price, color, image_url, pipeline_stage
   } = req.body;
 
   if (!name) return res.status(400).json({ error: 'Name is required' });
@@ -47,9 +47,9 @@ router.post('/', requireAuth, (req, res) => {
       tasting_notes, category, status, keg_level, untappd_url,
       brewfather_id, brewers_friend_id, grainfather_id,
       external_source, external_id, serving_size, serve_method, glassware,
-      on_tap_date, price, color, image_url
+      on_tap_date, price, color, image_url, pipeline_stage
     ) VALUES (
-      ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+      ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
     )
   `).run(
     id, tap_number || null, tap_label || null, name, style || null, producer || null,
@@ -58,7 +58,7 @@ router.post('/', requireAuth, (req, res) => {
     untappd_url || null, brewfather_id || null, brewers_friend_id || null,
     grainfather_id || null, external_source || null, external_id || null,
     serving_size || '16oz', serve_method || null, glassware || null,
-    on_tap_date || null, price || null, color || null, image_url || null
+    on_tap_date || null, price || null, color || null, image_url || null, pipeline_stage || null
   );
 
   const tap = db.prepare('SELECT * FROM taps WHERE id = ?').get(id);
@@ -82,7 +82,7 @@ router.put('/:id', requireAuth, (req, res) => {
     'tasting_notes', 'category', 'status', 'keg_level', 'untappd_url',
     'brewfather_id', 'brewers_friend_id', 'grainfather_id',
     'external_source', 'external_id', 'serving_size', 'serve_method', 'glassware',
-    'on_tap_date', 'price', 'color', 'image_url'
+    'on_tap_date', 'price', 'color', 'image_url', 'pipeline_stage'
   ];
 
   const updates = [];
@@ -114,6 +114,49 @@ router.patch('/:id/keg-level', requireAuth, (req, res) => {
   db.prepare('UPDATE taps SET keg_level = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
     .run(level, req.params.id);
   res.json({ id: req.params.id, keg_level: level });
+});
+
+// POST promote a coming-soon tap onto an available tap number (auth required)
+router.post('/:id/promote', requireAuth, (req, res) => {
+  const db = getDb();
+  const tapNumber = parseInt(req.body.tap_number, 10);
+  if (!Number.isInteger(tapNumber) || tapNumber < 1) {
+    return res.status(400).json({ error: 'tap_number must be a positive integer' });
+  }
+
+  const tap = db.prepare('SELECT * FROM taps WHERE id = ?').get(req.params.id);
+  if (!tap) return res.status(404).json({ error: 'Not found' });
+  if (tap.status !== 'coming-soon') {
+    return res.status(400).json({ error: 'Only a coming-soon tap can be promoted' });
+  }
+
+  const activeOccupant = db.prepare(
+    "SELECT id FROM taps WHERE tap_number = ? AND status = 'active' AND id != ?"
+  ).get(tapNumber, tap.id);
+  if (activeOccupant) {
+    return res.status(409).json({ error: `Tap ${tapNumber} is already active` });
+  }
+
+  // Clear out any kicked/hidden row currently sitting on that number — but never
+  // touch another coming-soon beer that happens to share the number (e.g. one
+  // pre-assigned for planning purposes); just free it from that tap instead.
+  db.prepare(
+    "UPDATE taps SET status = 'deleted', updated_at = CURRENT_TIMESTAMP WHERE tap_number = ? AND status IN ('kicked', 'hidden') AND id != ?"
+  ).run(tapNumber, tap.id);
+  db.prepare(
+    "UPDATE taps SET tap_number = NULL, updated_at = CURRENT_TIMESTAMP WHERE tap_number = ? AND status = 'coming-soon' AND id != ?"
+  ).run(tapNumber, tap.id);
+
+  const today = new Date().toISOString().split('T')[0];
+  db.prepare(`
+    UPDATE taps SET
+      tap_number = ?, status = 'active', pipeline_stage = NULL,
+      keg_level = 100, on_tap_date = ?, updated_at = CURRENT_TIMESTAMP
+    WHERE id = ?
+  `).run(tapNumber, today, tap.id);
+
+  const updated = db.prepare('SELECT * FROM taps WHERE id = ?').get(tap.id);
+  res.json(updated);
 });
 
 // DELETE tap (auth required - soft delete)

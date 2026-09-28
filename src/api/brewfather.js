@@ -136,13 +136,14 @@ router.post('/import/:id', requireAuth, async (req, res) => {
 
     // Map Brewfather batch status → tap status
     const tapStatus = brewfatherStatusToTapStatus(batch.status);
+    const pipelineStage = brewfatherStatusToPipelineStage(batch.status);
 
     db.prepare(`
       INSERT INTO taps (
         id, tap_number, name, style, producer, abv, ibu, description,
-        tasting_notes, category, status, keg_level, brewfather_id, brewfather_batch_no,
+        tasting_notes, category, status, pipeline_stage, keg_level, brewfather_id, brewfather_batch_no,
         external_source, external_id, serving_size, color, image_url, last_synced_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
     `).run(
       id,
       req.body.tap_number || null,
@@ -155,6 +156,7 @@ router.post('/import/:id', requireAuth, async (req, res) => {
       tap.tasting_notes || null,
       tap.category || 'beer',
       tapStatus,
+      pipelineStage,
       100,
       batch._id,
       batch.batchNo || null,
@@ -214,17 +216,18 @@ router.post('/import-bulk', requireAuth, async (req, res) => {
       const tap = mapBatchToTap(batch);
       const id = uuidv4();
       const tapStatus = brewfatherStatusToTapStatus(batch.status);
+      const pipelineStage = brewfatherStatusToPipelineStage(batch.status);
 
       db.prepare(`
         INSERT INTO taps (
           id, tap_number, name, style, producer, abv, ibu, description,
-          tasting_notes, category, status, keg_level, brewfather_id, brewfather_batch_no,
+          tasting_notes, category, status, pipeline_stage, keg_level, brewfather_id, brewfather_batch_no,
           external_source, external_id, serving_size, color, image_url, last_synced_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
       `).run(
         id, tap_number || null, tap.name, tap.style || null, tap.producer || null,
         tap.abv || null, tap.ibu || null, tap.description || null, tap.tasting_notes || null,
-        tap.category || 'beer', tapStatus, 100,
+        tap.category || 'beer', tapStatus, pipelineStage, 100,
         batch._id, batch.batchNo || null,
         'brewfather', batch._id, '16oz', tap.color || null, tap.image_url || null
       );
@@ -264,13 +267,17 @@ router.post('/sync/:tap_id', requireAuth, async (req, res) => {
 
     const batch = await response.json();
     const updated = mapBatchToTap(batch);
-    const tapStatus = brewfatherStatusToTapStatus(batch.status);
+    const mappedStatus = brewfatherStatusToTapStatus(batch.status);
+    // A promoted (active) tap must never be pulled back to coming-soon by a
+    // sync just because Brewfather hasn't caught up to Completed/Archived yet.
+    const tapStatus = (tap.status === 'active' && mappedStatus === 'coming-soon') ? 'active' : mappedStatus;
+    const pipelineStage = tapStatus === 'coming-soon' ? brewfatherStatusToPipelineStage(batch.status) : null;
 
     db.prepare(`
       UPDATE taps SET
         name = ?, style = ?, producer = ?, abv = ?, ibu = ?, description = ?,
         tasting_notes = ?, color = ?, image_url = ?, brewfather_batch_no = ?,
-        status = ?, last_synced_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+        status = ?, pipeline_stage = ?, last_synced_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
     `).run(
       updated.name,
@@ -284,6 +291,7 @@ router.post('/sync/:tap_id', requireAuth, async (req, res) => {
       updated.image_url || tap.image_url,
       batch.batchNo || tap.brewfather_batch_no || null,
       tapStatus,
+      pipelineStage,
       tap.id
     );
 
@@ -323,13 +331,17 @@ router.post('/sync-all', requireAuth, async (req, res) => {
 
       const batch = await response.json();
       const updated = mapBatchToTap(batch);
-      const tapStatus = brewfatherStatusToTapStatus(batch.status);
+      const mappedStatus = brewfatherStatusToTapStatus(batch.status);
+      // A promoted (active) tap must never be pulled back to coming-soon by a
+      // sync just because Brewfather hasn't caught up to Completed/Archived yet.
+      const tapStatus = (tap.status === 'active' && mappedStatus === 'coming-soon') ? 'active' : mappedStatus;
+      const pipelineStage = tapStatus === 'coming-soon' ? brewfatherStatusToPipelineStage(batch.status) : null;
 
       db.prepare(`
         UPDATE taps SET
           name = ?, style = ?, producer = ?, abv = ?, ibu = ?, description = ?,
           tasting_notes = ?, color = ?, image_url = ?, brewfather_batch_no = ?,
-          status = ?, last_synced_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+          status = ?, pipeline_stage = ?, last_synced_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
       `).run(
         updated.name, updated.style || tap.style,
@@ -339,7 +351,7 @@ router.post('/sync-all', requireAuth, async (req, res) => {
         updated.tasting_notes || tap.tasting_notes,
         updated.color || tap.color, updated.image_url || tap.image_url,
         batch.batchNo || tap.brewfather_batch_no || null,
-        tapStatus, tap.id
+        tapStatus, pipelineStage, tap.id
       );
 
       results.synced.push({ id: tap.id, name: updated.name });
@@ -365,6 +377,23 @@ function brewfatherStatusToTapStatus(bfStatus) {
       return 'kicked';
     default:
       return 'active';
+  }
+}
+
+// Map Brewfather batch status → pipeline stage (only meaningful while the
+// tap status is 'coming-soon'; NULL once it becomes active/kicked)
+function brewfatherStatusToPipelineStage(bfStatus) {
+  switch (bfStatus) {
+    case 'Planning':
+      return 'planned';
+    case 'Brewing':
+      return 'brewing';
+    case 'Fermenting':
+      return 'fermenting';
+    case 'Conditioning':
+      return 'packaged';
+    default:
+      return null;
   }
 }
 
