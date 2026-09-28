@@ -668,7 +668,7 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px;
       <div class="form-row">
         <div class="form-group" style="margin-bottom:0">
           <label class="form-label">Status</label>
-          <select class="form-select" id="f-status">
+          <select class="form-select" id="f-status" onchange="toggleStageField()">
             <option value="active">On Tap</option>
             <option value="coming-soon">Coming Soon</option>
             <option value="kicked">Kicked / Empty</option>
@@ -679,6 +679,15 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px;
           <label class="form-label">Date Tapped</label>
           <input class="form-input" id="f-on-tap-date" type="date">
         </div>
+      </div>
+      <div class="form-group" id="f-stage-group" style="display:none">
+        <label class="form-label">Pipeline Stage</label>
+        <select class="form-select" id="f-stage">
+          <option value="planned">Planned</option>
+          <option value="brewing">Brewing</option>
+          <option value="fermenting">Fermenting</option>
+          <option value="packaged" id="f-stage-packaged-option">Packaged</option>
+        </select>
       </div>
     </div>
 
@@ -1494,6 +1503,7 @@ function openDrawer(id) {
     document.getElementById('f-num').value = t.tap_number || '';
     document.getElementById('f-tap-label').value = t.tap_label || '';
     document.getElementById('f-status').value = t.status || 'active';
+    document.getElementById('f-stage').value = t.pipeline_stage || 'planned';
     document.getElementById('f-on-tap-date').value = t.on_tap_date || '';
     document.getElementById('f-name').value = t.name || '';
     document.getElementById('f-producer').value = t.producer || '';
@@ -1522,6 +1532,7 @@ function openDrawer(id) {
   } else {
     ['f-id','f-num','f-tap-label','f-name','f-producer','f-style','f-abv','f-ibu','f-price','f-desc','f-notes','f-serving','f-color','f-image','f-untappd','f-brewfather','f-brewersfriend','f-grainfather'].forEach(i => { const el=document.getElementById(i); if(el) el.value=''; });
     document.getElementById('f-status').value = 'active';
+    document.getElementById('f-stage').value = 'planned';
     document.getElementById('f-category').value = 'beer';
     document.getElementById('f-serve-method').value = '';
     document.getElementById('f-glassware').value = '';
@@ -1534,6 +1545,7 @@ function openDrawer(id) {
   }
   setImageTab('url');
   clearTapImageFile();
+  toggleStageField();
   document.getElementById('drawer-overlay').classList.add('open');
   document.getElementById('tap-drawer').classList.add('open');
 }
@@ -1560,6 +1572,9 @@ async function saveTap() {
     tap_number: document.getElementById('f-num').value || null,
     tap_label: document.getElementById('f-tap-label').value || null,
     name, status: document.getElementById('f-status').value,
+    pipeline_stage: document.getElementById('f-status').value === 'coming-soon'
+      ? document.getElementById('f-stage').value
+      : null,
     on_tap_date: document.getElementById('f-on-tap-date').value || null,
     producer: document.getElementById('f-producer').value || null,
     category: document.getElementById('f-category').value,
@@ -1660,6 +1675,11 @@ function loadSettingsForm() {
 
 function toggleLogoSizeRow() {
   document.getElementById('logo-size-row').style.display = document.getElementById('s-use-logo-as-brand').checked ? 'block' : 'none';
+}
+function toggleStageField() {
+  const isComingSoon = document.getElementById('f-status').value === 'coming-soon';
+  document.getElementById('f-stage-group').style.display = isComingSoon ? 'block' : 'none';
+  document.getElementById('f-stage-packaged-option').textContent = state.settings.pipeline_packaged_label || 'Packaged';
 }
 function setLogoTab(tab) {
   const isUrl = tab === 'url';
