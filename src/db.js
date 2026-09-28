@@ -188,6 +188,9 @@ function runMigrations() {
       }
     }
   }
+
+  // 'inactive' status renamed to 'hidden' — no-op once existing rows are converted
+  db.prepare(`UPDATE taps SET status = 'hidden' WHERE status = 'inactive'`).run();
 }
 
 module.exports = { getDb, initDb, UPLOADS_DIR };
