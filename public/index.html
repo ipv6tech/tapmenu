@@ -532,11 +532,24 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px;
                 <input class="form-input" id="s-pipeline-refresh" type="number" min="0" placeholder="0">
               </div>
             </div>
+            <div class="form-row" style="margin-top:0.875rem">
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">Packaged Stage Label <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-dim)">(e.g. "On Deck", "Up Next")</span></label>
+                <input class="form-input" id="s-pipeline-packaged-label" type="text" placeholder="Packaged">
+              </div>
+            </div>
           </div>
           <div class="settings-card">
             <h3>Pages</h3>
             <div class="toggle-row"><span class="toggle-label">Enable Menu page</span><label class="toggle"><input type="checkbox" id="s-menu-page-enabled"><span class="toggle-slider"></span></label></div>
             <div class="toggle-row" style="border-bottom:none"><span class="toggle-label">Enable QR codes</span><label class="toggle"><input type="checkbox" id="s-show-qr-codes"><span class="toggle-slider"></span></label></div>
+          </div>
+          <div class="settings-card">
+            <h3>Taps</h3>
+            <div class="form-group" style="margin-bottom:0">
+              <label class="form-label">Total Taps <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-dim)">(used to compute which tap numbers are available)</span></label>
+              <input class="form-input" id="s-tap-count" type="number" min="1" style="max-width:120px" placeholder="12">
+            </div>
           </div>
           <div class="settings-card">
             <h3>Custom CSS</h3>
@@ -1664,6 +1677,8 @@ function loadSettingsForm() {
   document.getElementById('s-pipeline-enabled').checked = s.pipeline_enabled !== '0';
   document.getElementById('s-pipeline-title').value = s.pipeline_title || 'Coming Soon';
   document.getElementById('s-pipeline-refresh').value = s.pipeline_refresh_mins || '0';
+  document.getElementById('s-pipeline-packaged-label').value = s.pipeline_packaged_label || 'Packaged';
+  document.getElementById('s-tap-count').value = s.tap_count || '12';
 
   // QR codes / pages
   document.getElementById('s-show-qr-codes').checked = s.show_qr_codes !== '0';
@@ -1793,6 +1808,8 @@ async function saveSettings() {
       pipeline_enabled: document.getElementById('s-pipeline-enabled').checked ? '1' : '0',
       pipeline_title: document.getElementById('s-pipeline-title').value || 'Coming Soon',
       pipeline_refresh_mins: document.getElementById('s-pipeline-refresh').value || '0',
+      pipeline_packaged_label: document.getElementById('s-pipeline-packaged-label').value || 'Packaged',
+      tap_count: document.getElementById('s-tap-count').value || '12',
       show_qr_codes: document.getElementById('s-show-qr-codes').checked ? '1' : '0',
       menu_page_enabled: document.getElementById('s-menu-page-enabled').checked ? '1' : '0',
       custom_css: document.getElementById('s-custom-css').value || '',
