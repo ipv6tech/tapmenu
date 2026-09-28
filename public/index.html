@@ -1092,7 +1092,10 @@ function renderPipeline() {
   document.getElementById('pipeline-row').innerHTML = pipeline.map(t => {
     const col = t.color || 'var(--accent)';
     // Derive a readable status label
-    const statusLabel = t.brewfather_id ? 'Fermenting' : 'Coming Soon';
+    const STAGE_LABELS = { planned: 'Planned', brewing: 'Brewing', fermenting: 'Fermenting' };
+    const statusLabel = t.pipeline_stage === 'packaged'
+      ? (state.settings.pipeline_packaged_label || 'Packaged')
+      : (STAGE_LABELS[t.pipeline_stage] || 'Coming Soon');
 
     // Fermentation progress — only if we have OG + current gravity data
     let progressBar = '';
