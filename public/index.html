@@ -390,6 +390,7 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px;
       <aside class="admin-sidebar">
         <div class="sidebar-label">Taps</div>
         <button class="sidebar-btn active" id="sb-taps" onclick="showPanel('taps')"><span class="icon">🍺</span> All Taps</button>
+        <button class="sidebar-btn" id="sb-coming-soon" onclick="showPanel('coming-soon')"><span class="icon">🚧</span> Coming Soon</button>
         <button class="sidebar-btn" id="sb-add" onclick="openDrawer()"><span class="icon">➕</span> Add Tap</button>
         <div class="sidebar-label" style="margin-top:0.5rem">App</div>
         <button class="sidebar-btn" id="sb-settings" onclick="showPanel('settings')"><span class="icon">⚙️</span> Settings</button>
@@ -415,6 +416,15 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px;
               <tbody id="admin-taps-tbody"></tbody>
             </table>
           </div>
+        </div>
+
+        <!-- Coming Soon Panel -->
+        <div class="admin-panel" id="panel-coming-soon">
+          <div class="admin-panel-header">
+            <div class="panel-title">Coming Soon</div>
+          </div>
+          <div id="available-taps-indicator" style="margin-bottom:1rem;font-size:0.85rem;color:var(--text-muted)"></div>
+          <div id="coming-soon-groups"></div>
         </div>
 
         <!-- Settings Panel -->
@@ -996,7 +1006,7 @@ async function loadTaps() {
     state.taps = await api('GET', '/taps');
     renderDisplay();
     renderMobileMenu();
-    if (state.authenticated) renderAdminTable();
+    if (state.authenticated) { renderAdminTable(); renderComingSoonPanel(); }
   } catch(e) {}
 }
 
@@ -1457,7 +1467,7 @@ async function showAdminView() {
 }
 function showLoginForm() { document.getElementById('admin-login').style.display='block'; document.getElementById('admin-setup').style.display='none'; document.getElementById('admin-content').style.display='none'; }
 function showSetupForm() { document.getElementById('admin-login').style.display='none'; document.getElementById('admin-setup').style.display='block'; document.getElementById('admin-content').style.display='none'; }
-function showAuthContent() { document.getElementById('admin-login').style.display='none'; document.getElementById('admin-setup').style.display='none'; document.getElementById('admin-content').style.display='block'; renderAdminTable(); loadSettingsForm(); }
+function showAuthContent() { document.getElementById('admin-login').style.display='none'; document.getElementById('admin-setup').style.display='none'; document.getElementById('admin-content').style.display='block'; renderAdminTable(); renderComingSoonPanel(); loadSettingsForm(); }
 async function doLogin() {
   try { await api('POST', '/auth/login', {username: document.getElementById('login-user').value, password: document.getElementById('login-pass').value}); state.authenticated=true; document.getElementById('login-error').style.display='none'; showAuthContent(); toast('Welcome back!','success'); }
   catch(e) { const el=document.getElementById('login-error'); el.textContent=e.message; el.style.display='block'; }
@@ -1505,6 +1515,64 @@ function renderAdminTable() {
       <button class="btn btn-secondary btn-sm btn-icon" onclick="event.stopPropagation();openDrawer('${t.id}')" title="Edit">✏️</button>
     </div></td>
   </tr>`).join('');
+}
+
+// A tap number is occupied if any non-deleted row with status='active' has it.
+// Everything else in [1..tap_count] is available (never used, or currently kicked/hidden).
+function computeAvailableTapNumbers() {
+  const tapCount = parseInt(state.settings.tap_count, 10) || 12;
+  const occupied = new Set(
+    state.taps.filter(t => t.status === 'active' && t.tap_number).map(t => t.tap_number)
+  );
+  const available = [];
+  for (let n = 1; n <= tapCount; n++) {
+    if (!occupied.has(n)) available.push(n);
+  }
+  return available;
+}
+
+const PIPELINE_STAGE_ORDER = ['planned', 'brewing', 'fermenting', 'packaged'];
+function pipelineStageGroupLabel(stage) {
+  if (stage === 'packaged') return state.settings.pipeline_packaged_label || 'Packaged';
+  if (stage === 'planned') return 'Planned';
+  if (stage === 'brewing') return 'Brewing';
+  if (stage === 'fermenting') return 'Fermenting';
+  return 'Unassigned';
+}
+
+function renderComingSoonPanel() {
+  const available = computeAvailableTapNumbers();
+  document.getElementById('available-taps-indicator').textContent =
+    available.length ? `Available taps: ${available.join(', ')}` : 'No taps available';
+
+  const comingSoon = state.taps.filter(t => t.status === 'coming-soon');
+  const groups = {};
+  for (const stage of [...PIPELINE_STAGE_ORDER, null]) {
+    groups[stage ?? 'unassigned'] = comingSoon.filter(t => (t.pipeline_stage || null) === stage);
+  }
+
+  const container = document.getElementById('coming-soon-groups');
+  const sections = [...PIPELINE_STAGE_ORDER, 'unassigned'].map(key => {
+    const stageKey = key === 'unassigned' ? null : key;
+    const taps = groups[key];
+    if (!taps.length) return '';
+    const rows = taps.map(t => `
+      <div onclick="openDrawer('${t.id}')" style="display:flex;align-items:center;justify-content:space-between;padding:0.6rem 0.875rem;background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:0.5rem;cursor:pointer">
+        <div style="display:flex;align-items:center;gap:0.5rem">
+          <span style="font-weight:600">${esc(t.name)}</span>
+          ${t.brewfather_id ? '<span class="integration-badge">🍺 Brewfather</span>' : ''}
+        </div>
+      </div>
+    `).join('');
+    return `
+      <div style="margin-bottom:1.25rem">
+        <div style="font:600 0.72rem var(--font-mono);color:var(--text-dim);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.5rem">${esc(pipelineStageGroupLabel(stageKey))}</div>
+        ${rows}
+      </div>
+    `;
+  }).join('');
+
+  container.innerHTML = sections || '<div class="empty-state">Nothing in the pipeline right now.</div>';
 }
 
 // ════════════════════════════════ DRAWER ════════════════════════════════
