@@ -1562,6 +1562,7 @@ function renderComingSoonPanel() {
           <span style="font-weight:600">${esc(t.name)}</span>
           ${t.brewfather_id ? '<span class="integration-badge">🍺 Brewfather</span>' : ''}
         </div>
+        <button class="btn btn-primary btn-sm" onclick="event.stopPropagation();promoteTap('${t.id}')" ${available.length ? '' : 'disabled title="No taps available"'}>→ Put on Tap</button>
       </div>
     `).join('');
     return `
@@ -1573,6 +1574,27 @@ function renderComingSoonPanel() {
   }).join('');
 
   container.innerHTML = sections || '<div class="empty-state">Nothing in the pipeline right now.</div>';
+}
+
+async function promoteTap(tapId) {
+  const available = computeAvailableTapNumbers();
+  if (!available.length) { toast('No taps available', 'error'); return; }
+
+  const choice = prompt(`Which tap number? Available: ${available.join(', ')}`, String(available[0]));
+  if (choice === null) return;
+  const tapNumber = parseInt(choice, 10);
+  if (!available.includes(tapNumber)) {
+    toast(`Tap ${choice} is not available`, 'error');
+    return;
+  }
+
+  try {
+    await api('POST', `/taps/${tapId}/promote`, { tap_number: tapNumber });
+    toast('Beer moved onto tap!', 'success');
+    await loadTaps();
+  } catch(e) {
+    toast(e.message, 'error');
+  }
 }
 
 // ════════════════════════════════ DRAWER ════════════════════════════════
