@@ -162,8 +162,6 @@ Add your Brewfather User ID and API Key under Settings → Integrations. From th
 
 Batch status maps to tap status automatically: Planning/Brewing/Fermenting/Conditioning → *Coming Soon*, Completed → *On Tap*, Archived → *Kicked*.
 
-Brewer's Friend and Grainfather batch ID fields exist in the schema and admin form, but there's no sync logic for them yet — PRs welcome!
-
 ---
 
 ## Development
@@ -191,7 +189,7 @@ App runs at http://localhost:3000
 
 ## Contributing
 
-Issues and PRs are welcome — this is a small self-hosted project, so keep changes focused and test them against a real Docker rebuild before submitting (see `docker compose build && docker compose up -d`). There's no formal test suite yet; that's a good place to contribute too.
+Issues and PRs are welcome — this is a small self-hosted project, so keep changes focused and test them against a real Docker rebuild before submitting (see `docker compose build && docker compose up -d`).
 
 ---
 
