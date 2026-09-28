@@ -532,6 +532,11 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px;
             </div>
           </div>
           <div class="settings-card">
+            <h3>Pages</h3>
+            <div class="toggle-row"><span class="toggle-label">Enable Menu page</span><label class="toggle"><input type="checkbox" id="s-menu-page-enabled"><span class="toggle-slider"></span></label></div>
+            <div class="toggle-row" style="border-bottom:none"><span class="toggle-label">Enable QR codes</span><label class="toggle"><input type="checkbox" id="s-show-qr-codes"><span class="toggle-slider"></span></label></div>
+          </div>
+          <div class="settings-card">
             <h3>Custom CSS</h3>
             <p class="text-muted text-sm" style="margin-bottom:0.75rem">Injected into the display page only. Target <code style="font-family:var(--font-mono);font-size:0.8rem;background:var(--surface2);padding:0.1rem 0.3rem;border-radius:3px">#pipeline-section</code>, <code style="font-family:var(--font-mono);font-size:0.8rem;background:var(--surface2);padding:0.1rem 0.3rem;border-radius:3px">.tap-grid</code>, <code style="font-family:var(--font-mono);font-size:0.8rem;background:var(--surface2);padding:0.1rem 0.3rem;border-radius:3px">.display-header</code>, etc.</p>
             <textarea class="form-textarea" id="s-custom-css" style="min-height:120px;font-family:var(--font-mono);font-size:0.8rem" placeholder="/* e.g. */&#10;.display-header { background: #1a0a2e; }&#10;#pipeline-section { border-color: #7c3aed; }"></textarea>
@@ -601,7 +606,7 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px;
           </div>
           <div class="settings-card">
             <h3>📱 QR Codes</h3>
-            <p class="text-muted text-sm">Auto-generated per tap. Click any tap on the display to see its QR code.</p>
+            <p class="text-muted text-sm">Auto-generated per tap. Click any tap on the display to see its QR code. Toggle in Settings → Display.</p>
           </div>
         </div>
 
@@ -886,6 +891,9 @@ async function loadSettings() {
 }
 
 function applySettings(s) {
+  const navMenuEl = document.getElementById('nav-menu');
+  if (navMenuEl) navMenuEl.style.display = s.menu_page_enabled === '0' ? 'none' : '';
+
   const breweryName = s.brewery_name || s.taproom_name || 'Tap Menu';
   const displayName = s.establishment_name || breweryName;
   const useLogoAsBrand = s.use_logo_as_brand === '1';
@@ -972,6 +980,7 @@ async function loadTaps() {
 }
 
 function navigate(page) {
+  if (page === 'menu' && state.settings.menu_page_enabled === '0') page = 'display';
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   document.getElementById(page + '-page')?.classList.add('active');
@@ -1395,10 +1404,12 @@ async function openTapModal(id) {
   if (links.length) html += `<div class="modal-section"><div class="modal-section-title">Links</div><div class="modal-links">${links.join('')}</div></div>`;
 
   // QR
-  try {
-    const qr = await api('GET', `/qr/${tap.id}`);
-    html += `<div class="modal-section"><div class="modal-section-title">QR Code</div><div class="qr-section"><img class="qr-img" src="${qr.qr}" alt="QR"><div class="qr-url">${qr.url}</div></div></div>`;
-  } catch(e) {}
+  if (state.settings.show_qr_codes !== '0') {
+    try {
+      const qr = await api('GET', `/qr/${tap.id}`);
+      html += `<div class="modal-section"><div class="modal-section-title">QR Code</div><div class="qr-section"><img class="qr-img" src="${qr.qr}" alt="QR"><div class="qr-url">${qr.url}</div></div></div>`;
+    } catch(e) {}
+  }
 
   // Admin actions
   if (state.authenticated) {
@@ -1637,6 +1648,10 @@ function loadSettingsForm() {
   document.getElementById('s-pipeline-title').value = s.pipeline_title || 'Coming Soon';
   document.getElementById('s-pipeline-refresh').value = s.pipeline_refresh_mins || '0';
 
+  // QR codes / pages
+  document.getElementById('s-show-qr-codes').checked = s.show_qr_codes !== '0';
+  document.getElementById('s-menu-page-enabled').checked = s.menu_page_enabled !== '0';
+
   // Custom CSS
   document.getElementById('s-custom-css').value = s.custom_css || '';
 
@@ -1756,6 +1771,8 @@ async function saveSettings() {
       pipeline_enabled: document.getElementById('s-pipeline-enabled').checked ? '1' : '0',
       pipeline_title: document.getElementById('s-pipeline-title').value || 'Coming Soon',
       pipeline_refresh_mins: document.getElementById('s-pipeline-refresh').value || '0',
+      show_qr_codes: document.getElementById('s-show-qr-codes').checked ? '1' : '0',
+      menu_page_enabled: document.getElementById('s-menu-page-enabled').checked ? '1' : '0',
       custom_css: document.getElementById('s-custom-css').value || '',
     });
     await loadSettings(); renderDisplay(); toast('Settings saved!', 'success');

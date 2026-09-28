@@ -153,6 +153,8 @@ function initSchema() {
       ('pipeline_enabled', '1'),
       ('pipeline_title', 'Coming Soon'),
       ('pipeline_refresh_mins', '0'),
+      ('show_qr_codes', '1'),
+      ('menu_page_enabled', '1'),
       ('custom_css', ''),
       ('accent_color', '#f59e0b'),
       ('logo_url', ''),
