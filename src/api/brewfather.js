@@ -267,8 +267,11 @@ router.post('/sync/:tap_id', requireAuth, async (req, res) => {
 
     const batch = await response.json();
     const updated = mapBatchToTap(batch);
-    const tapStatus = brewfatherStatusToTapStatus(batch.status);
-    const pipelineStage = brewfatherStatusToPipelineStage(batch.status);
+    const mappedStatus = brewfatherStatusToTapStatus(batch.status);
+    // A promoted (active) tap must never be pulled back to coming-soon by a
+    // sync just because Brewfather hasn't caught up to Completed/Archived yet.
+    const tapStatus = (tap.status === 'active' && mappedStatus === 'coming-soon') ? 'active' : mappedStatus;
+    const pipelineStage = tapStatus === 'coming-soon' ? brewfatherStatusToPipelineStage(batch.status) : null;
 
     db.prepare(`
       UPDATE taps SET
@@ -328,8 +331,11 @@ router.post('/sync-all', requireAuth, async (req, res) => {
 
       const batch = await response.json();
       const updated = mapBatchToTap(batch);
-      const tapStatus = brewfatherStatusToTapStatus(batch.status);
-      const pipelineStage = brewfatherStatusToPipelineStage(batch.status);
+      const mappedStatus = brewfatherStatusToTapStatus(batch.status);
+      // A promoted (active) tap must never be pulled back to coming-soon by a
+      // sync just because Brewfather hasn't caught up to Completed/Archived yet.
+      const tapStatus = (tap.status === 'active' && mappedStatus === 'coming-soon') ? 'active' : mappedStatus;
+      const pipelineStage = tapStatus === 'coming-soon' ? brewfatherStatusToPipelineStage(batch.status) : null;
 
       db.prepare(`
         UPDATE taps SET

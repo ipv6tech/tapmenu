@@ -137,9 +137,14 @@ router.post('/:id/promote', requireAuth, (req, res) => {
     return res.status(409).json({ error: `Tap ${tapNumber} is already active` });
   }
 
-  // Clear out any non-deleted row (kicked/hidden) currently sitting on that number
+  // Clear out any kicked/hidden row currently sitting on that number — but never
+  // touch another coming-soon beer that happens to share the number (e.g. one
+  // pre-assigned for planning purposes); just free it from that tap instead.
   db.prepare(
-    "UPDATE taps SET status = 'deleted', updated_at = CURRENT_TIMESTAMP WHERE tap_number = ? AND status != 'deleted' AND id != ?"
+    "UPDATE taps SET status = 'deleted', updated_at = CURRENT_TIMESTAMP WHERE tap_number = ? AND status IN ('kicked', 'hidden') AND id != ?"
+  ).run(tapNumber, tap.id);
+  db.prepare(
+    "UPDATE taps SET tap_number = NULL, updated_at = CURRENT_TIMESTAMP WHERE tap_number = ? AND status = 'coming-soon' AND id != ?"
   ).run(tapNumber, tap.id);
 
   const today = new Date().toISOString().split('T')[0];

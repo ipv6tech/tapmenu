@@ -1483,6 +1483,7 @@ function showPanel(name) {
   document.getElementById('panel-'+name)?.classList.add('active');
   document.getElementById('sb-'+name)?.classList.add('active');
   if (name === 'integrations') renderSyncHistory();
+  if (name === 'coming-soon') renderComingSoonPanel();
 }
 function renderAdminTable() {
   const tbody = document.getElementById('admin-taps-tbody');
@@ -1904,7 +1905,7 @@ async function saveSettings() {
       menu_page_enabled: document.getElementById('s-menu-page-enabled').checked ? '1' : '0',
       custom_css: document.getElementById('s-custom-css').value || '',
     });
-    await loadSettings(); renderDisplay(); toast('Settings saved!', 'success');
+    await loadSettings(); renderDisplay(); if (state.authenticated) renderComingSoonPanel(); toast('Settings saved!', 'success');
   } catch(e) { toast(e.message, 'error'); }
 }
 async function changePassword() {
