@@ -422,6 +422,7 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px;
         <div class="admin-panel" id="panel-coming-soon">
           <div class="admin-panel-header">
             <div class="panel-title">Coming Soon</div>
+            <button class="btn btn-primary" onclick="openDrawer(null, 'coming-soon')">+ Add Upcoming Beer</button>
           </div>
           <div id="available-taps-indicator" style="margin-bottom:1rem;font-size:0.85rem;color:var(--text-muted)"></div>
           <div id="coming-soon-groups"></div>
@@ -1599,7 +1600,7 @@ async function promoteTap(tapId) {
 }
 
 // ════════════════════════════════ DRAWER ════════════════════════════════
-function openDrawer(id) {
+function openDrawer(id, defaultStatus) {
   state.editingId = id || null;
   document.getElementById('drawer-title').textContent = id ? 'Edit Tap' : 'Add Tap';
   document.getElementById('drawer-delete-btn').style.display = id ? 'inline-flex' : 'none';
@@ -1638,7 +1639,7 @@ function openDrawer(id) {
     else { imgCurrentWrap.style.display = 'none'; }
   } else {
     ['f-id','f-num','f-tap-label','f-name','f-producer','f-style','f-abv','f-ibu','f-price','f-desc','f-notes','f-serving','f-color','f-image','f-untappd','f-brewfather','f-brewersfriend','f-grainfather'].forEach(i => { const el=document.getElementById(i); if(el) el.value=''; });
-    document.getElementById('f-status').value = 'active';
+    document.getElementById('f-status').value = defaultStatus || 'active';
     document.getElementById('f-stage').value = 'planned';
     document.getElementById('f-category').value = 'beer';
     document.getElementById('f-serve-method').value = '';
