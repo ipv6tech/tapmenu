@@ -1,4 +1,4 @@
-# Pipeline Stages for Coming Soon Taps
+# Pipeline Stages for Coming Soon Taps, and Promoting to an Available Tap
 
 Resolves: [#3 — Split out Coming Soon from Tap status](https://github.com/ipv6tech/tapmenu/issues/3), [#2 — Investigate Brewfather Batches that are in "Planning mode"](https://github.com/ipv6tech/tapmenu/issues/2)
 
@@ -10,7 +10,11 @@ pipeline section, regardless of whether the batch is actually Planning,
 Brewing, Fermenting, or Conditioning in Brewfather (#2). There's also no
 admin-side view dedicated to upcoming beers — they're mixed into the single
 "All Taps" table — so newly imported or added upcoming beers aren't easy to
-track as a group (#3).
+track as a group (#3). And once a coming-soon beer is ready, there's no way to
+know which physical taps are actually free to receive it, or a direct way to
+move it onto one — `tap_number` today only exists as a field on beer rows, so
+there's no registry of how many physical taps a venue has or which ones are
+currently empty.
 
 ## Goals
 
@@ -23,15 +27,20 @@ track as a group (#3).
   imports/syncs and manually-added upcoming beers land in automatically.
 - Let admins rename the label of the final stage (default "Packaged") to
   whatever fits their taproom's voice (e.g. "On Deck", "Up Next").
+- Let an admin declare how many physical taps the venue has, and see which of
+  those tap numbers currently have nothing active on them.
+- Let an admin move ("promote") a coming-soon beer directly onto one of those
+  available tap numbers from the new Coming Soon admin view.
 
 ## Non-goals
 
 - No change to the `active` / `kicked` / `hidden` statuses or their existing
-  visibility rules.
-- No "promote to active" workflow beyond what already exists (editing a tap's
-  status/tap_number in the edit drawer).
+  visibility rules, beyond how they factor into tap availability below.
 - No beer/recipe archive (tracked separately as
-  [#7](https://github.com/ipv6tech/tapmenu/issues/7)).
+  [#7](https://github.com/ipv6tech/tapmenu/issues/7)) — though promoting onto
+  a tap that's currently occupied by a kicked/hidden row soft-deletes that
+  row, which is exactly the kind of data #7 would later let you browse and
+  restore.
 
 ## Data model
 
@@ -53,6 +62,7 @@ allowlist in `src/api/auth.js`):
 | Key | Default | Notes |
 |-----|---------|-------|
 | `pipeline_packaged_label` | `'Packaged'` | Display label for the final pipeline stage. Only this stage's label is configurable — Planned/Brewing/Fermenting stay fixed, matching Brewfather's own terms. |
+| `tap_count` | `'12'` | Total number of physical taps at the venue. Defines the numbered roster used to compute available taps (see below). Editable in Settings. |
 
 Migration (idempotent, added to `runMigrations()` in `src/db.js` alongside the
 existing `ALTER TABLE` calls, using the existing duplicate-column catch
@@ -109,6 +119,35 @@ const statusLabel = t.pipeline_stage === 'packaged'
 This directly resolves #2: the label now reflects the tap's actual stage
 instead of a hardcoded guess.
 
+## Tap roster & availability
+
+A tap number is **occupied** if any non-deleted row with `status = 'active'`
+currently has that `tap_number`. Every number in `1..tap_count` that isn't
+occupied is **available** — whether it's never been assigned to any row, or
+its most recent row is `kicked`/`hidden`.
+
+Computed client-side (no new endpoint): `state.taps` already holds every
+non-deleted tap; available numbers = `[1..tap_count]` minus the
+`tap_number`s of rows with `status === 'active'`. Used by both the "Available
+taps" indicator and the promote picker below.
+
+## Promoting a coming-soon beer onto a tap
+
+New endpoint `POST /api/taps/:id/promote`, body `{ tap_number }`:
+
+1. Load the tap at `:id`; 404 if missing, 400 if its `status` isn't
+   `coming-soon`.
+2. Re-check `tap_number` is actually available server-side (any non-deleted
+   row with that number and `status = 'active'` → 409 Conflict, guarding
+   against a stale client-side picker).
+3. Soft-delete (`status = 'deleted'`) every non-deleted row currently holding
+   that `tap_number` (covers `kicked`/`hidden` rows, and the rare case of more
+   than one).
+4. Update the promoted tap: `tap_number` = the chosen number, `status =
+   'active'`, `pipeline_stage = NULL`, `keg_level = 100`, `on_tap_date` =
+   today (ISO `YYYY-MM-DD`).
+5. Return the updated tap.
+
 ## New admin "Coming Soon" section
 
 New sidebar entry (`sb-coming-soon` / `showPanel('coming-soon')`) next to "All
@@ -119,8 +158,15 @@ Brewfather link badge (if linked). Clicking a row opens the same edit drawer
 used by "All Taps" (`openDrawer(tap.id)`), where the stage dropdown added
 above lets the admin change it — no new inline-editing widget, just a
 filtered/grouped read of the same tap list. No separate backend endpoint
-needed — it filters the same `state.taps` array already loaded by
-`loadTaps()`.
+needed for the listing itself — it filters the same `state.taps` array
+already loaded by `loadTaps()`.
+
+At the top of the panel, an "Available taps: 4, 7, 9" line (or "No taps
+available" if none) using the computed list above. Each row also gets a "→
+Put on Tap" button; clicking it opens a small picker of the available numbers
+and, on confirmation, calls the promote endpoint and refreshes the tap list.
+If there are no available taps, the button is disabled with a tooltip
+explaining why.
 
 Brewfather imports/syncs and manually-added upcoming beers all land here
 automatically since they're just taps with `status = 'coming-soon'` — no
@@ -140,3 +186,13 @@ throughout this session:
   and clears `pipeline_stage` server-side.
 - Confirm existing `active`/`kicked`/`hidden` taps are unaffected (regression
   check against the status-display work from the previous branch).
+- Set `tap_count` to a small number, occupy some of them as `active`, leave
+  others `kicked`/unused, and confirm the "Available taps" list matches
+  exactly the unoccupied numbers.
+- Promote a coming-soon beer onto an available number that's currently held
+  by a `kicked` row; confirm the old row is soft-deleted, the promoted tap
+  now has that number with `status = 'active'`, `pipeline_stage = NULL`, and
+  the number is no longer listed as available afterward.
+- Attempt to promote onto a number that's actually occupied (simulating a
+  stale picker) and confirm the server returns 409 rather than silently
+  double-assigning it.
