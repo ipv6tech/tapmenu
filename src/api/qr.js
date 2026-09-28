@@ -6,6 +6,10 @@ const { getDb } = require('../db');
 // Generate QR code for a tap's detail page
 router.get('/:id', async (req, res) => {
   const db = getDb();
+
+  const qrSetting = db.prepare('SELECT value FROM settings WHERE key = ?').get('show_qr_codes');
+  if (qrSetting && qrSetting.value === '0') return res.status(404).json({ error: 'Not found' });
+
   const tap = db.prepare('SELECT * FROM taps WHERE id = ?').get(req.params.id);
   if (!tap) return res.status(404).json({ error: 'Not found' });
 
