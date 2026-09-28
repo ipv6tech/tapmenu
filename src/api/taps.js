@@ -36,7 +36,7 @@ router.post('/', requireAuth, (req, res) => {
     tasting_notes, category, status, keg_level, untappd_url,
     brewfather_id, brewers_friend_id, grainfather_id,
     external_source, external_id, serving_size, serve_method, glassware,
-    on_tap_date, price, color, image_url
+    on_tap_date, price, color, image_url, pipeline_stage
   } = req.body;
 
   if (!name) return res.status(400).json({ error: 'Name is required' });
@@ -47,9 +47,9 @@ router.post('/', requireAuth, (req, res) => {
       tasting_notes, category, status, keg_level, untappd_url,
       brewfather_id, brewers_friend_id, grainfather_id,
       external_source, external_id, serving_size, serve_method, glassware,
-      on_tap_date, price, color, image_url
+      on_tap_date, price, color, image_url, pipeline_stage
     ) VALUES (
-      ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+      ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
     )
   `).run(
     id, tap_number || null, tap_label || null, name, style || null, producer || null,
@@ -58,7 +58,7 @@ router.post('/', requireAuth, (req, res) => {
     untappd_url || null, brewfather_id || null, brewers_friend_id || null,
     grainfather_id || null, external_source || null, external_id || null,
     serving_size || '16oz', serve_method || null, glassware || null,
-    on_tap_date || null, price || null, color || null, image_url || null
+    on_tap_date || null, price || null, color || null, image_url || null, pipeline_stage || null
   );
 
   const tap = db.prepare('SELECT * FROM taps WHERE id = ?').get(id);
@@ -82,7 +82,7 @@ router.put('/:id', requireAuth, (req, res) => {
     'tasting_notes', 'category', 'status', 'keg_level', 'untappd_url',
     'brewfather_id', 'brewers_friend_id', 'grainfather_id',
     'external_source', 'external_id', 'serving_size', 'serve_method', 'glassware',
-    'on_tap_date', 'price', 'color', 'image_url'
+    'on_tap_date', 'price', 'color', 'image_url', 'pipeline_stage'
   ];
 
   const updates = [];
