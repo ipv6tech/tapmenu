@@ -155,6 +155,8 @@ function initSchema() {
       ('pipeline_refresh_mins', '0'),
       ('show_qr_codes', '1'),
       ('menu_page_enabled', '1'),
+      ('pipeline_packaged_label', 'Packaged'),
+      ('tap_count', '12'),
       ('custom_css', ''),
       ('accent_color', '#f59e0b'),
       ('logo_url', ''),
@@ -176,6 +178,7 @@ function runMigrations() {
     `ALTER TABLE taps ADD COLUMN on_tap_date TEXT`,
     `ALTER TABLE taps ADD COLUMN brewfather_batch_no INTEGER`,
     `ALTER TABLE taps ADD COLUMN last_synced_at DATETIME`,
+    `ALTER TABLE taps ADD COLUMN pipeline_stage TEXT`,
   ];
   for (const sql of migrations) {
     try {
