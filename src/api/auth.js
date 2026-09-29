@@ -104,7 +104,7 @@ router.put('/settings', requireAuth, (req, res) => {
     'show_serve_method', 'show_glassware', 'show_tasting_notes', 'show_on_tap_date',
     'show_description', 'show_serving_size',
     'pipeline_enabled', 'pipeline_title', 'pipeline_refresh_mins',
-    'pipeline_packaged_label', 'tap_count',
+    'pipeline_packaged_label', 'tap_count', 'hidden_tap_numbers',
     'show_qr_codes', 'menu_page_enabled',
     'custom_css',
     'accent_color', 'logo_url', 'display_layout', 'use_logo_as_brand', 'logo_size',

@@ -180,6 +180,7 @@ function initSchema() {
       ('menu_page_enabled', '1'),
       ('pipeline_packaged_label', 'Packaged'),
       ('tap_count', '12'),
+      ('hidden_tap_numbers', ''),
       ('custom_css', ''),
       ('accent_color', '#f59e0b'),
       ('logo_url', ''),
