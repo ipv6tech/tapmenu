@@ -391,6 +391,7 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px;
         <div class="sidebar-label">Taps</div>
         <button class="sidebar-btn active" id="sb-taps" onclick="showPanel('taps')"><span class="icon">🍺</span> All Taps</button>
         <button class="sidebar-btn" id="sb-coming-soon" onclick="showPanel('coming-soon')"><span class="icon">🚧</span> Coming Soon</button>
+        <button class="sidebar-btn" id="sb-beers" onclick="showPanel('beers')"><span class="icon">📖</span> Beers Library</button>
         <button class="sidebar-btn" id="sb-add" onclick="openDrawer()"><span class="icon">➕</span> Add Tap</button>
         <div class="sidebar-label" style="margin-top:0.5rem">App</div>
         <button class="sidebar-btn" id="sb-settings" onclick="showPanel('settings')"><span class="icon">⚙️</span> Settings</button>
@@ -426,6 +427,21 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px;
           </div>
           <div id="available-taps-indicator" style="margin-bottom:1rem;font-size:0.85rem;color:var(--text-muted)"></div>
           <div id="coming-soon-groups"></div>
+        </div>
+
+        <!-- Beers Library Panel -->
+        <div class="admin-panel" id="panel-beers">
+          <div class="admin-panel-header">
+            <div class="panel-title">Beers Library</div>
+          </div>
+          <div class="taps-table-wrap">
+            <table>
+              <thead><tr>
+                <th>Name</th><th>Producer</th><th>Style</th><th>ABV</th><th>Last Updated</th><th style="text-align:right">Actions</th>
+              </tr></thead>
+              <tbody id="admin-beers-tbody"></tbody>
+            </table>
+          </div>
         </div>
 
         <!-- Settings Panel -->
@@ -679,6 +695,12 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px;
     <!-- TAP IDENTITY -->
     <div style="margin-bottom:0.875rem">
       <div style="font:600 0.68rem var(--font-mono);color:var(--text-dim);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:0.75rem">Tap Identity</div>
+      <div class="form-group" id="beer-picker-group" style="display:none">
+        <label class="form-label">Load from Beers Library</label>
+        <select class="form-select" id="f-beer-picker" onchange="applyBeerPick(this.value)">
+          <option value="">— Start from scratch —</option>
+        </select>
+      </div>
       <div class="form-row" style="grid-template-columns:90px 1fr;margin-bottom:0.875rem">
         <div class="form-group" style="margin-bottom:0">
           <label class="form-label">Tap #</label>
@@ -888,10 +910,40 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px;
   </div>
 </div>
 
+<!-- ════ BEER EDIT MODAL ════ -->
+<div class="modal-overlay" id="beer-modal-overlay" onclick="closeBeerModalBg(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-tap-name">Edit Beer</div>
+      <button class="modal-close" onclick="closeBeerEditModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="beer-f-id">
+      <div class="form-group"><label class="form-label">Name *</label><input class="form-input" id="beer-f-name" type="text"></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Producer</label><input class="form-input" id="beer-f-producer" type="text"></div>
+        <div class="form-group"><label class="form-label">Style</label><input class="form-input" id="beer-f-style" type="text"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">ABV %</label><input class="form-input" id="beer-f-abv" type="number" step="0.1" min="0"></div>
+        <div class="form-group"><label class="form-label">IBU</label><input class="form-input" id="beer-f-ibu" type="number" min="0"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Description</label><textarea class="form-textarea" id="beer-f-desc"></textarea></div>
+      <div class="form-group"><label class="form-label">Tasting Notes</label><textarea class="form-textarea" id="beer-f-notes"></textarea></div>
+      <div class="form-group"><label class="form-label">Untappd URL</label><input class="form-input" id="beer-f-untappd" type="url"></div>
+      <div style="display:flex;justify-content:flex-end;gap:0.5rem;margin-top:1rem">
+        <button class="btn btn-danger btn-sm" style="margin-right:auto" onclick="deleteBeerFromModal()">Delete</button>
+        <button class="btn btn-secondary" onclick="closeBeerEditModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveBeerEdit()">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
 // ════════════════════════════════ STATE ════════════════════════════════
 let state = {
-  taps: [], settings: {},
+  taps: [], settings: {}, beers: [],
   menuFilter: 'all',
   currentLayout: 'grid',
   authenticated: false, editingId: null,
@@ -911,6 +963,7 @@ async function api(method, path, body) {
 async function init() {
   await loadSettings();
   await loadTaps();
+  await loadBeers();
   const auth = await api('GET', '/auth/me').catch(() => ({authenticated: false}));
   state.authenticated = auth.authenticated;
   const route = location.pathname.replace(/^\//, '') || 'display';
@@ -1009,6 +1062,10 @@ async function loadTaps() {
     renderMobileMenu();
     if (state.authenticated) { renderAdminTable(); renderComingSoonPanel(); }
   } catch(e) {}
+}
+
+async function loadBeers() {
+  try { state.beers = await api('GET', '/beers'); } catch(e) { state.beers = []; }
 }
 
 function navigate(page) {
@@ -1470,11 +1527,11 @@ function showLoginForm() { document.getElementById('admin-login').style.display=
 function showSetupForm() { document.getElementById('admin-login').style.display='none'; document.getElementById('admin-setup').style.display='block'; document.getElementById('admin-content').style.display='none'; }
 function showAuthContent() { document.getElementById('admin-login').style.display='none'; document.getElementById('admin-setup').style.display='none'; document.getElementById('admin-content').style.display='block'; renderAdminTable(); renderComingSoonPanel(); loadSettingsForm(); }
 async function doLogin() {
-  try { await api('POST', '/auth/login', {username: document.getElementById('login-user').value, password: document.getElementById('login-pass').value}); state.authenticated=true; document.getElementById('login-error').style.display='none'; showAuthContent(); toast('Welcome back!','success'); }
+  try { await api('POST', '/auth/login', {username: document.getElementById('login-user').value, password: document.getElementById('login-pass').value}); state.authenticated=true; document.getElementById('login-error').style.display='none'; await loadBeers(); showAuthContent(); toast('Welcome back!','success'); }
   catch(e) { const el=document.getElementById('login-error'); el.textContent=e.message; el.style.display='block'; }
 }
 async function doSetup() {
-  try { await api('POST', '/auth/setup', {username: document.getElementById('setup-user').value, password: document.getElementById('setup-pass').value}); state.authenticated=true; showAuthContent(); toast('Account created!','success'); }
+  try { await api('POST', '/auth/setup', {username: document.getElementById('setup-user').value, password: document.getElementById('setup-pass').value}); state.authenticated=true; await loadBeers(); showAuthContent(); toast('Account created!','success'); }
   catch(e) { toast(e.message,'error'); }
 }
 async function doLogout() { await api('POST', '/auth/logout'); state.authenticated=false; showLoginForm(); }
@@ -1485,6 +1542,7 @@ function showPanel(name) {
   document.getElementById('sb-'+name)?.classList.add('active');
   if (name === 'integrations') renderSyncHistory();
   if (name === 'coming-soon') renderComingSoonPanel();
+  if (name === 'beers') renderBeersPanel();
 }
 function renderAdminTable() {
   const tbody = document.getElementById('admin-taps-tbody');
@@ -1578,6 +1636,26 @@ function renderComingSoonPanel() {
   container.innerHTML = sections || '<div class="empty-state">Nothing in the pipeline right now.</div>';
 }
 
+async function renderBeersPanel() {
+  await loadBeers();
+  const tbody = document.getElementById('admin-beers-tbody');
+  if (!state.beers.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-dim);padding:2rem">No beers saved yet. Beers are added automatically when you create or edit a tap.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = state.beers.map(b => `<tr>
+    <td style="font-weight:600">${esc(b.name)}</td>
+    <td>${b.producer ? esc(b.producer) : '—'}</td>
+    <td>${b.style ? esc(b.style) : '—'}</td>
+    <td style="font-family:var(--font-mono);font-size:0.78rem">${b.abv ? b.abv+'%' : '—'}</td>
+    <td style="font:400 0.72rem var(--font-mono);color:var(--text-muted)">${b.updated_at ? timeAgo(b.updated_at) : '—'}</td>
+    <td style="text-align:right"><div style="display:flex;justify-content:flex-end;gap:0.3rem">
+      <button class="btn btn-secondary btn-sm btn-icon" onclick="openBeerEditModal('${b.id}')" title="Edit">✏️</button>
+      <button class="btn btn-secondary btn-sm btn-icon" onclick="deleteBeer('${b.id}')" title="Delete">🗑</button>
+    </div></td>
+  </tr>`).join('');
+}
+
 async function promoteTap(tapId) {
   const available = computeAvailableTapNumbers();
   if (!available.length) { toast('No taps available', 'error'); return; }
@@ -1600,10 +1678,34 @@ async function promoteTap(tapId) {
 }
 
 // ════════════════════════════════ DRAWER ════════════════════════════════
+function applyBeerPick(beerId) {
+  if (!beerId) return;
+  const b = state.beers.find(x => x.id === beerId);
+  if (!b) return;
+  document.getElementById('f-name').value = b.name || '';
+  document.getElementById('f-producer').value = b.producer || '';
+  document.getElementById('f-category').value = b.category || 'beer';
+  document.getElementById('f-style').value = b.style || '';
+  document.getElementById('f-abv').value = b.abv || '';
+  document.getElementById('f-ibu').value = b.ibu || '';
+  document.getElementById('f-desc').value = b.description || '';
+  document.getElementById('f-notes').value = b.tasting_notes || '';
+  document.getElementById('f-serving').value = b.serving_size || '';
+  document.getElementById('f-color').value = b.color || '';
+  document.getElementById('f-image').value = b.image_url || '';
+  document.getElementById('f-untappd').value = b.untappd_url || '';
+  document.getElementById('f-brewfather').value = b.brewfather_id || '';
+  document.getElementById('f-brewersfriend').value = b.brewers_friend_id || '';
+  document.getElementById('f-grainfather').value = b.grainfather_id || '';
+  const imgCurrentWrap = document.getElementById('image-current-wrap');
+  if (b.image_url) { document.getElementById('image-current-img').src = b.image_url; imgCurrentWrap.style.display = 'flex'; }
+  else { imgCurrentWrap.style.display = 'none'; }
+}
 function openDrawer(id, defaultStatus) {
   state.editingId = id || null;
   document.getElementById('drawer-title').textContent = id ? 'Edit Tap' : 'Add Tap';
   document.getElementById('drawer-delete-btn').style.display = id ? 'inline-flex' : 'none';
+  document.getElementById('beer-picker-group').style.display = 'none';
   if (id) {
     const t = state.taps.find(x => x.id === id);
     if (!t) return;
@@ -1639,6 +1741,16 @@ function openDrawer(id, defaultStatus) {
     else { imgCurrentWrap.style.display = 'none'; }
   } else {
     ['f-id','f-num','f-tap-label','f-name','f-producer','f-style','f-abv','f-ibu','f-price','f-desc','f-notes','f-serving','f-color','f-image','f-untappd','f-brewfather','f-brewersfriend','f-grainfather'].forEach(i => { const el=document.getElementById(i); if(el) el.value=''; });
+    const pickerGroup = document.getElementById('beer-picker-group');
+    const picker = document.getElementById('f-beer-picker');
+    if (state.beers.length) {
+      picker.innerHTML = '<option value="">— Start from scratch —</option>' +
+        state.beers.map(b => `<option value="${b.id}">${esc(b.name)}${b.producer ? ' — ' + esc(b.producer) : ''}</option>`).join('');
+      picker.value = '';
+      pickerGroup.style.display = '';
+    } else {
+      pickerGroup.style.display = 'none';
+    }
     document.getElementById('f-status').value = defaultStatus || 'active';
     document.getElementById('f-stage').value = 'planned';
     document.getElementById('f-category').value = 'beer';
@@ -1658,6 +1770,59 @@ function openDrawer(id, defaultStatus) {
   document.getElementById('tap-drawer').classList.add('open');
 }
 function closeDrawer() { document.getElementById('drawer-overlay').classList.remove('open'); document.getElementById('tap-drawer').classList.remove('open'); state.editingId=null; }
+
+function closeBeerModalBg(e) { if (e.target === document.getElementById('beer-modal-overlay')) closeBeerEditModal(); }
+function openBeerEditModal(id) {
+  const b = state.beers.find(x => x.id === id);
+  if (!b) return;
+  document.getElementById('beer-f-id').value = b.id;
+  document.getElementById('beer-f-name').value = b.name || '';
+  document.getElementById('beer-f-producer').value = b.producer || '';
+  document.getElementById('beer-f-style').value = b.style || '';
+  document.getElementById('beer-f-abv').value = b.abv || '';
+  document.getElementById('beer-f-ibu').value = b.ibu || '';
+  document.getElementById('beer-f-desc').value = b.description || '';
+  document.getElementById('beer-f-notes').value = b.tasting_notes || '';
+  document.getElementById('beer-f-untappd').value = b.untappd_url || '';
+  document.getElementById('beer-modal-overlay').classList.add('open');
+}
+function closeBeerEditModal() {
+  document.getElementById('beer-modal-overlay').classList.remove('open');
+}
+async function saveBeerEdit() {
+  const id = document.getElementById('beer-f-id').value;
+  const name = document.getElementById('beer-f-name').value.trim();
+  if (!name) { toast('Name is required', 'error'); return; }
+  const body = {
+    name,
+    producer: document.getElementById('beer-f-producer').value || null,
+    style: document.getElementById('beer-f-style').value || null,
+    abv: document.getElementById('beer-f-abv').value || null,
+    ibu: document.getElementById('beer-f-ibu').value || null,
+    description: document.getElementById('beer-f-desc').value || null,
+    tasting_notes: document.getElementById('beer-f-notes').value || null,
+    untappd_url: document.getElementById('beer-f-untappd').value || null,
+  };
+  try {
+    await api('PUT', '/beers/' + id, body);
+    toast('Beer updated!', 'success');
+    closeBeerEditModal();
+    await renderBeersPanel();
+  } catch(e) { toast(e.message, 'error'); }
+}
+async function deleteBeer(id) {
+  if (!confirm('Delete this beer from the library? Existing taps are not affected.')) return;
+  try {
+    await api('DELETE', '/beers/' + id);
+    toast('Beer deleted', 'success');
+    await renderBeersPanel();
+  } catch(e) { toast(e.message, 'error'); }
+}
+async function deleteBeerFromModal() {
+  const id = document.getElementById('beer-f-id').value;
+  closeBeerEditModal();
+  await deleteBeer(id);
+}
 
 async function saveTap() {
   const name = document.getElementById('f-name').value.trim();
@@ -1706,7 +1871,7 @@ async function saveTap() {
   try {
     if (state.editingId) { await api('PUT', '/taps/'+state.editingId, body); toast('Tap updated!','success'); }
     else { await api('POST', '/taps', body); toast('Tap added!','success'); }
-    closeDrawer(); await loadTaps(); renderAdminTable();
+    closeDrawer(); await loadTaps(); await loadBeers(); renderAdminTable();
   } catch(e) { toast(e.message,'error'); }
 }
 

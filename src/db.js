@@ -119,6 +119,29 @@ function initSchema() {
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
+    CREATE TABLE IF NOT EXISTS beers (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      producer TEXT,
+      style TEXT,
+      abv REAL,
+      ibu INTEGER,
+      description TEXT,
+      tasting_notes TEXT,
+      category TEXT,
+      untappd_url TEXT,
+      serving_size TEXT,
+      color TEXT,
+      image_url TEXT,
+      brewfather_id TEXT,
+      brewers_friend_id TEXT,
+      grainfather_id TEXT,
+      external_source TEXT,
+      external_id TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
     CREATE TABLE IF NOT EXISTS settings (
       key TEXT PRIMARY KEY,
       value TEXT

@@ -9,6 +9,7 @@ const tapsRouter = require('./src/api/taps');
 const authRouter = require('./src/api/auth');
 const qrRouter = require('./src/api/qr');
 const brewfatherRouter = require('./src/api/brewfather');
+const beersRouter = require('./src/api/beers');
 
 const PORT = process.env.PORT || 3000;
 
@@ -34,6 +35,7 @@ async function start() {
   app.use('/api/auth', authRouter);
   app.use('/api/qr', qrRouter);
   app.use('/api/brewfather', brewfatherRouter);
+  app.use('/api/beers', beersRouter);
 
   app.use('/uploads', express.static(UPLOADS_DIR));
   app.use(express.static(path.join(__dirname, 'public')));
