@@ -107,6 +107,10 @@ body { font-family: var(--font-body); background: var(--bg); color: var(--text);
 .display-header.logo-as-brand img.logo { height: 64px; margin: 0 auto 0.4rem; display: block; }
 .display-header h1 { font-family: var(--font-display); font-size: clamp(1.6rem, 4vw, 3rem); letter-spacing: 0.1em; line-height: 1; }
 .display-header .tagline { color: var(--text-muted); font-size: 0.72rem; letter-spacing: 0.25em; text-transform: uppercase; margin-top: 0.3rem; }
+.display-page-dots { display: flex; justify-content: center; gap: 0.4rem; padding: 0.75rem 0; }
+.display-page-dots.hidden { display: none; }
+.display-page-dots .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--border2); }
+.display-page-dots .dot.active { background: var(--accent); }
 .theme-toggle-btn {
   position: absolute; top: 0.75rem; right: 1.25rem;
   background: none; border: 1px solid var(--border); border-radius: 8px;
@@ -354,6 +358,7 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px;
     <div class="tagline" id="display-tagline">What's on tap</div>
   </div>
   <div class="tap-grid layout-grid" id="display-grid"></div>
+  <div class="display-page-dots hidden" id="display-page-dots"></div>
   <div id="pipeline-section" class="hidden">
     <div class="pipeline-header">
       <span class="pipeline-header-title" id="pipeline-title">Coming Soon</span>
@@ -586,6 +591,16 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px;
             <div class="form-group" style="margin-bottom:0">
               <label class="form-label">Total Taps <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-dim)">(used to compute which tap numbers are available)</span></label>
               <input class="form-input" id="s-tap-count" type="number" min="1" style="max-width:120px" placeholder="12" onchange="renderHiddenTapsCheckboxes()">
+            </div>
+            <div class="form-group" style="margin-top:0.875rem;margin-bottom:0;display:flex;gap:1rem">
+              <div style="flex:1">
+                <label class="form-label">Taps Per Screen <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-dim)">(blank = show all)</span></label>
+                <input class="form-input" id="s-taps-per-page" type="number" min="1" style="max-width:120px" placeholder="Show all">
+              </div>
+              <div style="flex:1">
+                <label class="form-label">Rotation Interval (seconds)</label>
+                <input class="form-input" id="s-rotation-secs" type="number" min="3" style="max-width:120px" placeholder="15">
+              </div>
             </div>
             <div class="form-group" style="margin-top:0.875rem;margin-bottom:0">
               <label class="form-label">Hidden Taps <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-dim)">(excluded from the public display entirely)</span></label>
@@ -960,6 +975,7 @@ let state = {
   taps: [], settings: {}, beers: [],
   menuFilter: 'all',
   currentLayout: 'grid',
+  displayPage: 0,
   authenticated: false, editingId: null,
 };
 
@@ -1071,6 +1087,7 @@ function applySettings(s) {
   if (s.display_layout) state.currentLayout = s.display_layout;
 
   schedulePipelineRefresh();
+  scheduleDisplayRotation();
 }
 
 async function loadTaps() {
@@ -1226,7 +1243,16 @@ function emptyCardHTML(number) {
 
 function renderDisplay() {
   const s = state.settings;
-  const slots = buildTapSlots();
+  const allSlots = buildTapSlots();
+  const perPage = parseInt(s.taps_per_page, 10) || 0;
+  const pageCount = perPage > 0 ? Math.ceil(allSlots.length / perPage) : 1;
+  if (state.displayPage >= pageCount) state.displayPage = 0;
+  if (state.displayPage < 0) state.displayPage = 0;
+
+  const slots = (perPage > 0 && pageCount > 1)
+    ? allSlots.slice(state.displayPage * perPage, (state.displayPage + 1) * perPage)
+    : allSlots;
+
   const grid = document.getElementById('display-grid');
   grid.className = `tap-grid layout-${state.currentLayout}`;
   if (!slots.length) {
@@ -1239,6 +1265,18 @@ function renderDisplay() {
              gridCardHTML(slot.tap, s);
     }).join('');
   }
+
+  const dotsEl = document.getElementById('display-page-dots');
+  if (pageCount > 1) {
+    dotsEl.classList.remove('hidden');
+    dotsEl.innerHTML = Array.from({ length: pageCount }, (_, i) =>
+      `<div class="dot${i === state.displayPage ? ' active' : ''}"></div>`
+    ).join('');
+  } else {
+    dotsEl.classList.add('hidden');
+    dotsEl.innerHTML = '';
+  }
+
   renderPipeline();
 }
 
@@ -1300,6 +1338,25 @@ function schedulePipelineRefresh() {
       try { await api('POST', '/brewfather/sync-all', {}); await loadTaps(); renderDisplay(); } catch(e) {}
     }
   }, mins * 60 * 1000);
+}
+
+// ── Display page auto-rotation ──
+let _displayRotationTimer = null;
+function scheduleDisplayRotation() {
+  if (_displayRotationTimer) { clearInterval(_displayRotationTimer); _displayRotationTimer = null; }
+  const perPage = parseInt(state.settings.taps_per_page, 10) || 0;
+  if (perPage <= 0) return;
+  const secs = Math.max(3, parseInt(state.settings.display_rotation_secs, 10) || 15);
+  _displayRotationTimer = setInterval(() => {
+    if (!document.getElementById('display-page').classList.contains('active')) return;
+    // Recomputed on every tick (not cached at schedule time) so it tracks
+    // buildTapSlots()'s real slot count — which can include orphaned active/
+    // kicked taps beyond tap_count — rather than drifting from tap_count alone.
+    const pageCount = Math.ceil(buildTapSlots().length / perPage);
+    if (pageCount <= 1) return;
+    state.displayPage = (state.displayPage + 1) % pageCount;
+    renderDisplay();
+  }, secs * 1000);
 }
 
 function setLayout(l) { state.currentLayout = l; renderDisplay(); }
@@ -2077,6 +2134,8 @@ function loadSettingsForm() {
   document.getElementById('s-pipeline-refresh').value = s.pipeline_refresh_mins || '0';
   document.getElementById('s-pipeline-packaged-label').value = s.pipeline_packaged_label || 'Packaged';
   document.getElementById('s-tap-count').value = s.tap_count || '12';
+  document.getElementById('s-taps-per-page').value = s.taps_per_page || '';
+  document.getElementById('s-rotation-secs').value = s.display_rotation_secs || '15';
   renderHiddenTapsCheckboxes();
 
   // QR codes / pages
@@ -2209,6 +2268,8 @@ async function saveSettings() {
       pipeline_refresh_mins: document.getElementById('s-pipeline-refresh').value || '0',
       pipeline_packaged_label: document.getElementById('s-pipeline-packaged-label').value || 'Packaged',
       tap_count: document.getElementById('s-tap-count').value || '12',
+      taps_per_page: document.getElementById('s-taps-per-page').value || '',
+      display_rotation_secs: document.getElementById('s-rotation-secs').value || '15',
       hidden_tap_numbers: Array.from(document.querySelectorAll('.hidden-tap-cb:checked')).map(cb => cb.value).join(','),
       show_qr_codes: document.getElementById('s-show-qr-codes').checked ? '1' : '0',
       menu_page_enabled: document.getElementById('s-menu-page-enabled').checked ? '1' : '0',
