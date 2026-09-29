@@ -80,6 +80,7 @@ body { font-family: var(--font-body); background: var(--bg); color: var(--text);
 }
 .hamburger-btn { background: none; border: none; color: var(--text); font-size: 1.3rem; line-height: 1; cursor: pointer; padding: 0.35rem 0.5rem; border-radius: 6px; transition: background 0.15s; }
 .hamburger-btn:hover { background: var(--surface2); }
+.nav-actions { display: flex; align-items: center; gap: 0.2rem; }
 .nav-brand { display: flex; align-items: center; gap: 0.45rem; font-family: var(--font-display); font-size: 1.5rem; letter-spacing: 0.06em; color: var(--accent); cursor: pointer; }
 .nav-mini-logo { height: 24px; width: auto; object-fit: contain; }
 .nav-panel-overlay { display: none; position: fixed; inset: 0; z-index: 150; background: rgba(0,0,0,0.55); backdrop-filter: blur(2px); }
@@ -111,14 +112,6 @@ body { font-family: var(--font-body); background: var(--bg); color: var(--text);
 .display-page-dots.hidden { display: none; }
 .display-page-dots .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--border2); }
 .display-page-dots .dot.active { background: var(--accent); }
-.theme-toggle-btn {
-  position: fixed; top: 68px; right: 1.25rem; z-index: 50;
-  background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
-  color: var(--text-muted); font-size: 1rem; line-height: 1; cursor: pointer;
-  width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;
-  transition: all 0.15s;
-}
-.theme-toggle-btn:hover { color: var(--accent); border-color: var(--accent); background: var(--accent-dim); }
 
 /* ═══ PIPELINE SECTION ═══ */
 #pipeline-section { border-top: 1px solid var(--border); padding: 0.75rem 1.5rem 1rem; background: var(--surface); }
@@ -338,7 +331,10 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px;
     <span id="nav-brand-icon">🍺</span><img id="nav-brand-logo" class="nav-mini-logo" src="" alt="" style="display:none">
     <span id="nav-brand-name">Tap Menu</span>
   </div>
-  <button class="hamburger-btn" onclick="toggleNavPanel()" aria-label="Open menu">☰</button>
+  <div class="nav-actions">
+    <button class="hamburger-btn" id="theme-toggle-btn" onclick="toggleDisplayTheme()" title="Toggle theme" aria-label="Toggle light/dark theme"></button>
+    <button class="hamburger-btn" onclick="toggleNavPanel()" aria-label="Open menu">☰</button>
+  </div>
 </nav>
 <div class="nav-panel-overlay" id="nav-panel-overlay" onclick="closeNavPanel()"></div>
 <div class="nav-panel" id="nav-panel">
@@ -351,7 +347,6 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px;
 
 <!-- ════ DISPLAY PAGE ════ -->
 <div id="display-page" class="page active">
-  <button class="theme-toggle-btn" id="theme-toggle-btn" onclick="toggleDisplayTheme()" title="Toggle theme" aria-label="Toggle light/dark theme"></button>
   <div class="display-header">
     <img class="logo" id="display-logo" src="" alt="" style="display:none">
     <h1 id="display-title">Tap Menu</h1>
