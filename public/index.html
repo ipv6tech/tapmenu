@@ -1153,13 +1153,28 @@ function buildTapSlots() {
       .filter(n => Number.isInteger(n))
   );
   const slots = [];
+  const claimed = new Set();
   for (let n = 1; n <= tapCount; n++) {
-    if (hidden.has(n)) continue;
+    if (hidden.has(n)) {
+      // Hiding is deliberate even if something occupies this number —
+      // suppress it entirely instead of letting it fall through as an orphan below.
+      state.taps.filter(t => t.tap_number === n).forEach(t => claimed.add(t.id));
+      continue;
+    }
     const active = state.taps.find(t => t.tap_number === n && t.status === 'active');
     const kicked = !active && state.taps.find(t => t.tap_number === n && t.status === 'kicked');
     const pinned = !active && !kicked && state.taps.find(t => t.tap_number === n && t.status === 'coming-soon');
-    slots.push({ number: n, tap: active || kicked || pinned || null });
+    const chosen = active || kicked || pinned || null;
+    if (chosen) claimed.add(chosen.id);
+    slots.push({ number: n, tap: chosen });
   }
+  // An active/kicked beer with no tap_number, a tap_number outside
+  // 1..tap_count, or sharing a number with another active/kicked row (only
+  // the first is ever chosen above) must still be shown — losing a real
+  // beer off the grid silently is worse than an extra card appearing.
+  state.taps
+    .filter(t => (t.status === 'active' || t.status === 'kicked') && !claimed.has(t.id))
+    .forEach(t => slots.push({ number: t.tap_number || null, tap: t }));
   return slots;
 }
 
@@ -1299,9 +1314,9 @@ function gridCardHTML(t, s) {
       <div class="serve-row">
         ${showServe && t.serve_method && t.status === 'active' ? `<span class="serve-chip">${serveIcon(t.serve_method)} ${esc(t.serve_method)}</span>` : ''}
         ${showGlass && t.glassware && t.status === 'active' ? `<span class="serve-chip">${glassIcon(t.glassware)} ${esc(t.glassware)}</span>` : ''}
-        ${dateStr ? `<span class="on-tap-date">Tapped ${dateStr}</span>` : ''}
+        ${dateStr && t.status !== 'coming-soon' ? `<span class="on-tap-date">Tapped ${dateStr}</span>` : ''}
       </div>
-      ${showKeg ? `<div class="keg-bar-wrap" style="flex-shrink:0"><div class="keg-bar-track" style="width:50px"><div class="keg-bar-fill" style="width:${t.keg_level}%;background:${kg}"></div></div><span class="keg-label">${t.keg_level}%</span></div>` : ''}
+      ${showKeg && t.status !== 'coming-soon' ? `<div class="keg-bar-wrap" style="flex-shrink:0"><div class="keg-bar-track" style="width:50px"><div class="keg-bar-fill" style="width:${t.keg_level}%;background:${kg}"></div></div><span class="keg-label">${t.keg_level}%</span></div>` : ''}
     </div>
   </div>`;
 }
@@ -1351,9 +1366,9 @@ function largeCardHTML(t, s) {
         <div class="serve-row">
           ${showServe && t.serve_method && t.status === 'active' ? `<span class="serve-chip">${serveIcon(t.serve_method)} ${esc(t.serve_method)}</span>` : ''}
           ${showGlass && t.glassware && t.status === 'active' ? `<span class="serve-chip">${glassIcon(t.glassware)} ${esc(t.glassware)}</span>` : ''}
-          ${dateStr ? `<span class="on-tap-date">Tapped ${dateStr}</span>` : ''}
+          ${dateStr && t.status !== 'coming-soon' ? `<span class="on-tap-date">Tapped ${dateStr}</span>` : ''}
         </div>
-        ${showKeg ? `<div class="keg-bar-wrap" style="flex-shrink:0;gap:0.4rem"><div class="keg-bar-track" style="width:60px"><div class="keg-bar-fill" style="width:${t.keg_level}%;background:${kg}"></div></div><span class="keg-label">${t.keg_level}%</span></div>` : ''}
+        ${showKeg && t.status !== 'coming-soon' ? `<div class="keg-bar-wrap" style="flex-shrink:0;gap:0.4rem"><div class="keg-bar-track" style="width:60px"><div class="keg-bar-fill" style="width:${t.keg_level}%;background:${kg}"></div></div><span class="keg-label">${t.keg_level}%</span></div>` : ''}
       </div>
     </div>
   </div>`;
@@ -1399,12 +1414,12 @@ function listCardHTML(t, s) {
         ${showCat ? `<span class="badge cat">${categoryLabel(t.category)}</span>` : ''}
         ${showServe && t.serve_method && t.status === 'active' ? `<span class="badge serve">${serveIcon(t.serve_method)} ${esc(t.serve_method)}</span>` : ''}
         ${showGlass && t.glassware && t.status === 'active' ? `<span class="badge">${glassIcon(t.glassware)} ${esc(t.glassware)}</span>` : ''}
-        ${dateStr ? `<span class="badge" style="color:var(--text-dim)">Tapped ${dateStr}</span>` : ''}
+        ${dateStr && t.status !== 'coming-soon' ? `<span class="badge" style="color:var(--text-dim)">Tapped ${dateStr}</span>` : ''}
       </div>
     </div>
     <div class="list-right">
       <span class="tap-status-badge ${statusClass(t.status)}">${statusChipLabel(t.status)}</span>
-      ${showKeg ? `<div class="keg-bar-wrap"><div class="keg-bar-track" style="width:56px"><div class="keg-bar-fill" style="width:${t.keg_level}%;background:${kg}"></div></div><span class="keg-label">${t.keg_level}%</span></div>` : ''}
+      ${showKeg && t.status !== 'coming-soon' ? `<div class="keg-bar-wrap"><div class="keg-bar-track" style="width:56px"><div class="keg-bar-fill" style="width:${t.keg_level}%;background:${kg}"></div></div><span class="keg-label">${t.keg_level}%</span></div>` : ''}
     </div>
   </div>`;
 }
