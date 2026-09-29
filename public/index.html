@@ -592,6 +592,16 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px;
               <label class="form-label">Total Taps <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-dim)">(used to compute which tap numbers are available)</span></label>
               <input class="form-input" id="s-tap-count" type="number" min="1" style="max-width:120px" placeholder="12" onchange="renderHiddenTapsCheckboxes()">
             </div>
+            <div class="form-group" style="margin-top:0.875rem;margin-bottom:0;display:flex;gap:1rem">
+              <div style="flex:1">
+                <label class="form-label">Taps Per Screen <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-dim)">(blank = show all)</span></label>
+                <input class="form-input" id="s-taps-per-page" type="number" min="1" style="max-width:120px" placeholder="Show all">
+              </div>
+              <div style="flex:1">
+                <label class="form-label">Rotation Interval (seconds)</label>
+                <input class="form-input" id="s-rotation-secs" type="number" min="3" style="max-width:120px" placeholder="15">
+              </div>
+            </div>
             <div class="form-group" style="margin-top:0.875rem;margin-bottom:0">
               <label class="form-label">Hidden Taps <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-dim)">(excluded from the public display entirely)</span></label>
               <div id="s-hidden-taps-grid" style="display:flex;flex-wrap:wrap;gap:0.5rem"></div>
@@ -2121,6 +2131,8 @@ function loadSettingsForm() {
   document.getElementById('s-pipeline-refresh').value = s.pipeline_refresh_mins || '0';
   document.getElementById('s-pipeline-packaged-label').value = s.pipeline_packaged_label || 'Packaged';
   document.getElementById('s-tap-count').value = s.tap_count || '12';
+  document.getElementById('s-taps-per-page').value = s.taps_per_page || '';
+  document.getElementById('s-rotation-secs').value = s.display_rotation_secs || '15';
   renderHiddenTapsCheckboxes();
 
   // QR codes / pages
@@ -2253,6 +2265,8 @@ async function saveSettings() {
       pipeline_refresh_mins: document.getElementById('s-pipeline-refresh').value || '0',
       pipeline_packaged_label: document.getElementById('s-pipeline-packaged-label').value || 'Packaged',
       tap_count: document.getElementById('s-tap-count').value || '12',
+      taps_per_page: document.getElementById('s-taps-per-page').value || '',
+      display_rotation_secs: document.getElementById('s-rotation-secs').value || '15',
       hidden_tap_numbers: Array.from(document.querySelectorAll('.hidden-tap-cb:checked')).map(cb => cb.value).join(','),
       show_qr_codes: document.getElementById('s-show-qr-codes').checked ? '1' : '0',
       menu_page_enabled: document.getElementById('s-menu-page-enabled').checked ? '1' : '0',
