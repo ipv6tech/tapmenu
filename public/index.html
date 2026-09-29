@@ -980,9 +980,11 @@ async function init() {
   await loadBeers();
   const auth = await api('GET', '/auth/me').catch(() => ({authenticated: false}));
   state.authenticated = auth.authenticated;
-  const route = location.pathname.replace(/^\//, '') || 'display';
+  const isMobile = window.matchMedia && window.matchMedia('(max-width: 640px)').matches;
+  const defaultPage = (isMobile && state.settings.menu_page_enabled !== '0') ? 'menu' : 'display';
+  const route = location.pathname.replace(/^\//, '') || defaultPage;
   if (route.startsWith('tap/')) { navigate('display'); setTimeout(() => openTapModal(route.split('/')[1]), 300); }
-  else navigate(['admin','menu'].includes(route) ? route : 'display');
+  else navigate(['admin','menu'].includes(route) ? route : defaultPage);
 }
 
 async function loadSettings() {
