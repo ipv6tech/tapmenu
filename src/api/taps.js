@@ -10,6 +10,62 @@ function requireAuth(req, res, next) {
   res.status(401).json({ error: 'Unauthorized' });
 }
 
+// Keeps the beers library current with the latest details for a beer.
+// Matches on case-insensitive (name, producer) — brewfather_id is NOT used
+// for matching because it's different for every batch of the same recipe.
+// Never throws: a failure here must not block a tap save.
+function upsertBeerFromTap(db, tap) {
+  if (!tap.name || !tap.name.trim()) return;
+  try {
+    const producer = tap.producer || null;
+    const existing = producer
+      ? db.prepare('SELECT id FROM beers WHERE LOWER(name) = LOWER(?) AND LOWER(producer) = LOWER(?)').get(tap.name, producer)
+      : db.prepare('SELECT id FROM beers WHERE LOWER(name) = LOWER(?) AND producer IS NULL').get(tap.name);
+
+    const fields = {
+      name: tap.name, producer: tap.producer || null, style: tap.style || null,
+      abv: tap.abv || null, ibu: tap.ibu || null, description: tap.description || null,
+      tasting_notes: tap.tasting_notes || null, category: tap.category || null,
+      untappd_url: tap.untappd_url || null, serving_size: tap.serving_size || null,
+      color: tap.color || null, image_url: tap.image_url || null,
+      brewfather_id: tap.brewfather_id || null, brewers_friend_id: tap.brewers_friend_id || null,
+      grainfather_id: tap.grainfather_id || null, external_source: tap.external_source || null,
+      external_id: tap.external_id || null
+    };
+
+    if (existing) {
+      db.prepare(`
+        UPDATE beers SET
+          name=?, producer=?, style=?, abv=?, ibu=?, description=?, tasting_notes=?,
+          category=?, untappd_url=?, serving_size=?, color=?, image_url=?,
+          brewfather_id=?, brewers_friend_id=?, grainfather_id=?, external_source=?, external_id=?,
+          updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+      `).run(
+        fields.name, fields.producer, fields.style, fields.abv, fields.ibu, fields.description,
+        fields.tasting_notes, fields.category, fields.untappd_url, fields.serving_size, fields.color,
+        fields.image_url, fields.brewfather_id, fields.brewers_friend_id, fields.grainfather_id,
+        fields.external_source, fields.external_id, existing.id
+      );
+    } else {
+      db.prepare(`
+        INSERT INTO beers (
+          id, name, producer, style, abv, ibu, description, tasting_notes, category,
+          untappd_url, serving_size, color, image_url, brewfather_id, brewers_friend_id,
+          grainfather_id, external_source, external_id
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(
+        uuidv4(), fields.name, fields.producer, fields.style, fields.abv, fields.ibu,
+        fields.description, fields.tasting_notes, fields.category, fields.untappd_url,
+        fields.serving_size, fields.color, fields.image_url, fields.brewfather_id,
+        fields.brewers_friend_id, fields.grainfather_id, fields.external_source, fields.external_id
+      );
+    }
+  } catch (e) {
+    console.warn('Beer upsert warning:', e.message);
+  }
+}
+
 // GET all taps (public)
 router.get('/', (req, res) => {
   const db = getDb();
@@ -62,6 +118,7 @@ router.post('/', requireAuth, (req, res) => {
   );
 
   const tap = db.prepare('SELECT * FROM taps WHERE id = ?').get(id);
+  upsertBeerFromTap(db, tap);
   res.status(201).json(tap);
 });
 
@@ -101,6 +158,7 @@ router.put('/:id', requireAuth, (req, res) => {
   db.prepare(`UPDATE taps SET ${updates.join(', ')} WHERE id = ?`).run(...values);
 
   const tap = db.prepare('SELECT * FROM taps WHERE id = ?').get(req.params.id);
+  upsertBeerFromTap(db, tap);
   res.json(tap);
 });
 
