@@ -112,8 +112,8 @@ body { font-family: var(--font-body); background: var(--bg); color: var(--text);
 .display-page-dots .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--border2); }
 .display-page-dots .dot.active { background: var(--accent); }
 .theme-toggle-btn {
-  position: absolute; top: 0.75rem; right: 1.25rem;
-  background: none; border: 1px solid var(--border); border-radius: 8px;
+  position: fixed; top: 68px; right: 1.25rem; z-index: 50;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
   color: var(--text-muted); font-size: 1rem; line-height: 1; cursor: pointer;
   width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;
   transition: all 0.15s;
@@ -351,8 +351,8 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px;
 
 <!-- ════ DISPLAY PAGE ════ -->
 <div id="display-page" class="page active">
+  <button class="theme-toggle-btn" id="theme-toggle-btn" onclick="toggleDisplayTheme()" title="Toggle theme" aria-label="Toggle light/dark theme"></button>
   <div class="display-header">
-    <button class="theme-toggle-btn" id="theme-toggle-btn" onclick="toggleDisplayTheme()" title="Toggle theme" aria-label="Toggle light/dark theme"></button>
     <img class="logo" id="display-logo" src="" alt="" style="display:none">
     <h1 id="display-title">Tap Menu</h1>
     <div class="tagline" id="display-tagline">What's on tap</div>
