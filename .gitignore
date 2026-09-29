@@ -6,3 +6,4 @@ data/
 public/uploads/
 *.bak
 .claude/settings.local.json
+docs/
