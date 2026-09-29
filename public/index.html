@@ -1135,20 +1135,55 @@ function formatDate(d) {
 }
 
 // ════════════════════════════════ DISPLAY RENDER ════════════════════════════════
+// Every declared tap number (1..tap_count) becomes a "slot". Each slot shows
+// the highest-priority tap row currently on that number — active beats a
+// lingering kicked row beats a coming-soon beer pinned there for preview —
+// or an empty "Available" placeholder if nothing qualifies. A number in
+// hidden_tap_numbers is skipped entirely (no card, empty or otherwise).
+function buildTapSlots() {
+  const tapCount = parseInt(state.settings.tap_count, 10) || 12;
+  const hidden = new Set(
+    (state.settings.hidden_tap_numbers || '')
+      .split(',')
+      .map(s => parseInt(s.trim(), 10))
+      .filter(n => Number.isInteger(n))
+  );
+  const slots = [];
+  for (let n = 1; n <= tapCount; n++) {
+    if (hidden.has(n)) continue;
+    const active = state.taps.find(t => t.tap_number === n && t.status === 'active');
+    const kicked = !active && state.taps.find(t => t.tap_number === n && t.status === 'kicked');
+    const pinned = !active && !kicked && state.taps.find(t => t.tap_number === n && t.status === 'coming-soon');
+    slots.push({ number: n, tap: active || kicked || pinned || null });
+  }
+  return slots;
+}
+
+function emptyCardHTML(number) {
+  return `<div class="tap-card" style="--c:var(--border)">
+    <div class="list-color-strip" style="background:var(--border)"></div>
+    <div class="list-body" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:80px;padding:1.5rem">
+      <div class="tap-number-lg" style="font-size:1.8rem;opacity:0.4">${number}</div>
+      <div style="font:600 0.72rem var(--font-mono);text-transform:uppercase;letter-spacing:0.08em;color:var(--text-dim);margin-top:0.3rem">Available</div>
+    </div>
+    <div class="list-right"></div>
+  </div>`;
+}
+
 function renderDisplay() {
   const s = state.settings;
-  // Active + kicked taps on the grid — coming-soon goes to the pipeline, hidden is fully excluded
-  const activeTaps = state.taps.filter(t => t.status !== 'coming-soon' && t.status !== 'hidden');
+  const slots = buildTapSlots();
   const grid = document.getElementById('display-grid');
   grid.className = `tap-grid layout-${state.currentLayout}`;
-  if (!activeTaps.length) {
+  if (!slots.length) {
     grid.innerHTML = '<div class="empty-state">No taps to show.</div>';
   } else {
-    grid.innerHTML = activeTaps.map(t =>
-      state.currentLayout === 'large' ? largeCardHTML(t, s) :
-      state.currentLayout === 'list'  ? listCardHTML(t, s) :
-      gridCardHTML(t, s)
-    ).join('');
+    grid.innerHTML = slots.map(slot => {
+      if (!slot.tap) return emptyCardHTML(slot.number);
+      return state.currentLayout === 'large' ? largeCardHTML(slot.tap, s) :
+             state.currentLayout === 'list'  ? listCardHTML(slot.tap, s) :
+             gridCardHTML(slot.tap, s);
+    }).join('');
   }
   renderPipeline();
 }
