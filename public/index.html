@@ -1871,7 +1871,7 @@ async function saveTap() {
   try {
     if (state.editingId) { await api('PUT', '/taps/'+state.editingId, body); toast('Tap updated!','success'); }
     else { await api('POST', '/taps', body); toast('Tap added!','success'); }
-    closeDrawer(); await loadTaps(); renderAdminTable();
+    closeDrawer(); await loadTaps(); await loadBeers(); renderAdminTable();
   } catch(e) { toast(e.message,'error'); }
 }
 

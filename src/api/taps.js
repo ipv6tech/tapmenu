@@ -17,13 +17,14 @@ function requireAuth(req, res, next) {
 function upsertBeerFromTap(db, tap) {
   if (!tap.name || !tap.name.trim()) return;
   try {
-    const producer = tap.producer || null;
+    const name = tap.name.trim();
+    const producer = (tap.producer || '').trim() || null;
     const existing = producer
-      ? db.prepare('SELECT id FROM beers WHERE LOWER(name) = LOWER(?) AND LOWER(producer) = LOWER(?)').get(tap.name, producer)
-      : db.prepare('SELECT id FROM beers WHERE LOWER(name) = LOWER(?) AND producer IS NULL').get(tap.name);
+      ? db.prepare('SELECT id FROM beers WHERE LOWER(TRIM(name)) = LOWER(?) AND LOWER(TRIM(producer)) = LOWER(?)').get(name, producer)
+      : db.prepare('SELECT id FROM beers WHERE LOWER(TRIM(name)) = LOWER(?) AND (producer IS NULL OR TRIM(producer) = \'\')').get(name);
 
     const fields = {
-      name: tap.name, producer: tap.producer || null, style: tap.style || null,
+      name, producer, style: tap.style || null,
       abv: tap.abv || null, ibu: tap.ibu || null, description: tap.description || null,
       tasting_notes: tap.tasting_notes || null, category: tap.category || null,
       untappd_url: tap.untappd_url || null, serving_size: tap.serving_size || null,
@@ -226,3 +227,4 @@ router.delete('/:id', requireAuth, (req, res) => {
 });
 
 module.exports = router;
+module.exports.upsertBeerFromTap = upsertBeerFromTap;

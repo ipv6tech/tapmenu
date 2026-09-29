@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { getDb } = require('../db');
+const { upsertBeerFromTap } = require('./taps');
 
 function requireAuth(req, res, next) {
   if (req.session && req.session.userId) return next();
@@ -168,6 +169,7 @@ router.post('/import/:id', requireAuth, async (req, res) => {
     );
 
     const created = db.prepare('SELECT * FROM taps WHERE id = ?').get(id);
+    upsertBeerFromTap(db, created);
     res.status(201).json(created);
 
   } catch (err) {
@@ -233,6 +235,7 @@ router.post('/import-bulk', requireAuth, async (req, res) => {
       );
 
       const created = db.prepare('SELECT * FROM taps WHERE id = ?').get(id);
+      upsertBeerFromTap(db, created);
       results.imported.push(created);
 
     } catch (err) {
@@ -296,6 +299,7 @@ router.post('/sync/:tap_id', requireAuth, async (req, res) => {
     );
 
     const result = db.prepare('SELECT * FROM taps WHERE id = ?').get(tap.id);
+    upsertBeerFromTap(db, result);
     res.json(result);
 
   } catch (err) {
@@ -354,6 +358,8 @@ router.post('/sync-all', requireAuth, async (req, res) => {
         tapStatus, pipelineStage, tap.id
       );
 
+      const result = db.prepare('SELECT * FROM taps WHERE id = ?').get(tap.id);
+      upsertBeerFromTap(db, result);
       results.synced.push({ id: tap.id, name: updated.name });
     } catch (err) {
       results.errors.push({ id: tap.id, name: tap.name, reason: err.message });
