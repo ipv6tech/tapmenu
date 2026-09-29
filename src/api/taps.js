@@ -218,6 +218,50 @@ router.post('/:id/promote', requireAuth, (req, res) => {
   res.json(updated);
 });
 
+// POST pin a coming-soon tap onto a specific tap number, without promoting it
+// (auth required) — the number stays visually "reserved" but is NOT blocked
+// from being promoted into or re-pinned by something else; only a different
+// coming-soon tap targeting the same number is rejected.
+router.post('/:id/pin', requireAuth, (req, res) => {
+  const db = getDb();
+  const tapNumber = parseInt(req.body.tap_number, 10);
+  if (!Number.isInteger(tapNumber) || tapNumber < 1) {
+    return res.status(400).json({ error: 'tap_number must be a positive integer' });
+  }
+
+  const tap = db.prepare('SELECT * FROM taps WHERE id = ?').get(req.params.id);
+  if (!tap) return res.status(404).json({ error: 'Not found' });
+  if (tap.status !== 'coming-soon') {
+    return res.status(400).json({ error: 'Only a coming-soon tap can be pinned' });
+  }
+
+  const activeOccupant = db.prepare(
+    "SELECT id FROM taps WHERE tap_number = ? AND status = 'active' AND id != ?"
+  ).get(tapNumber, tap.id);
+  if (activeOccupant) {
+    return res.status(409).json({ error: `Tap ${tapNumber} is already active` });
+  }
+
+  const pinnedOccupant = db.prepare(
+    "SELECT id, name FROM taps WHERE tap_number = ? AND status = 'coming-soon' AND id != ?"
+  ).get(tapNumber, tap.id);
+  if (pinnedOccupant) {
+    return res.status(409).json({ error: `Tap ${tapNumber} is already pinned to "${pinnedOccupant.name}"` });
+  }
+
+  // Clear out any kicked/hidden row currently sitting on that number, same as promote().
+  db.prepare(
+    "UPDATE taps SET status = 'deleted', updated_at = CURRENT_TIMESTAMP WHERE tap_number = ? AND status IN ('kicked', 'hidden') AND id != ?"
+  ).run(tapNumber, tap.id);
+
+  db.prepare(
+    'UPDATE taps SET tap_number = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
+  ).run(tapNumber, tap.id);
+
+  const updated = db.prepare('SELECT * FROM taps WHERE id = ?').get(tap.id);
+  res.json(updated);
+});
+
 // DELETE tap (auth required - soft delete)
 router.delete('/:id', requireAuth, (req, res) => {
   const db = getDb();
