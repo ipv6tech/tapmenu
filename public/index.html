@@ -575,7 +575,11 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px;
             <h3>Taps</h3>
             <div class="form-group" style="margin-bottom:0">
               <label class="form-label">Total Taps <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-dim)">(used to compute which tap numbers are available)</span></label>
-              <input class="form-input" id="s-tap-count" type="number" min="1" style="max-width:120px" placeholder="12">
+              <input class="form-input" id="s-tap-count" type="number" min="1" style="max-width:120px" placeholder="12" onchange="renderHiddenTapsCheckboxes()">
+            </div>
+            <div class="form-group" style="margin-top:0.875rem;margin-bottom:0">
+              <label class="form-label">Hidden Taps <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-dim)">(excluded from the public display entirely)</span></label>
+              <div id="s-hidden-taps-grid" style="display:flex;flex-wrap:wrap;gap:0.5rem"></div>
             </div>
           </div>
           <div class="settings-card">
@@ -1135,20 +1139,70 @@ function formatDate(d) {
 }
 
 // ════════════════════════════════ DISPLAY RENDER ════════════════════════════════
+// Every declared tap number (1..tap_count) becomes a "slot". Each slot shows
+// the highest-priority tap row currently on that number — active beats a
+// lingering kicked row beats a coming-soon beer pinned there for preview —
+// or an empty "Available" placeholder if nothing qualifies. A number in
+// hidden_tap_numbers is skipped entirely (no card, empty or otherwise).
+function buildTapSlots() {
+  const tapCount = parseInt(state.settings.tap_count, 10) || 12;
+  const hidden = new Set(
+    (state.settings.hidden_tap_numbers || '')
+      .split(',')
+      .map(s => parseInt(s.trim(), 10))
+      .filter(n => Number.isInteger(n))
+  );
+  const slots = [];
+  const claimed = new Set();
+  for (let n = 1; n <= tapCount; n++) {
+    if (hidden.has(n)) {
+      // Hiding is deliberate even if something occupies this number —
+      // suppress it entirely instead of letting it fall through as an orphan below.
+      state.taps.filter(t => t.tap_number === n).forEach(t => claimed.add(t.id));
+      continue;
+    }
+    const active = state.taps.find(t => t.tap_number === n && t.status === 'active');
+    const kicked = !active && state.taps.find(t => t.tap_number === n && t.status === 'kicked');
+    const pinned = !active && !kicked && state.taps.find(t => t.tap_number === n && t.status === 'coming-soon');
+    const chosen = active || kicked || pinned || null;
+    if (chosen) claimed.add(chosen.id);
+    slots.push({ number: n, tap: chosen });
+  }
+  // An active/kicked beer with no tap_number, a tap_number outside
+  // 1..tap_count, or sharing a number with another active/kicked row (only
+  // the first is ever chosen above) must still be shown — losing a real
+  // beer off the grid silently is worse than an extra card appearing.
+  state.taps
+    .filter(t => (t.status === 'active' || t.status === 'kicked') && !claimed.has(t.id))
+    .forEach(t => slots.push({ number: t.tap_number || null, tap: t }));
+  return slots;
+}
+
+function emptyCardHTML(number) {
+  return `<div class="tap-card" style="--c:var(--border)">
+    <div class="list-color-strip" style="background:var(--border)"></div>
+    <div class="list-body" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:80px;padding:1.5rem">
+      <div class="tap-number-lg" style="font-size:1.8rem;opacity:0.4">${number}</div>
+      <div style="font:600 0.72rem var(--font-mono);text-transform:uppercase;letter-spacing:0.08em;color:var(--text-dim);margin-top:0.3rem">Available</div>
+    </div>
+    <div class="list-right"></div>
+  </div>`;
+}
+
 function renderDisplay() {
   const s = state.settings;
-  // Active + kicked taps on the grid — coming-soon goes to the pipeline, hidden is fully excluded
-  const activeTaps = state.taps.filter(t => t.status !== 'coming-soon' && t.status !== 'hidden');
+  const slots = buildTapSlots();
   const grid = document.getElementById('display-grid');
   grid.className = `tap-grid layout-${state.currentLayout}`;
-  if (!activeTaps.length) {
+  if (!slots.length) {
     grid.innerHTML = '<div class="empty-state">No taps to show.</div>';
   } else {
-    grid.innerHTML = activeTaps.map(t =>
-      state.currentLayout === 'large' ? largeCardHTML(t, s) :
-      state.currentLayout === 'list'  ? listCardHTML(t, s) :
-      gridCardHTML(t, s)
-    ).join('');
+    grid.innerHTML = slots.map(slot => {
+      if (!slot.tap) return emptyCardHTML(slot.number);
+      return state.currentLayout === 'large' ? largeCardHTML(slot.tap, s) :
+             state.currentLayout === 'list'  ? listCardHTML(slot.tap, s) :
+             gridCardHTML(slot.tap, s);
+    }).join('');
   }
   renderPipeline();
 }
@@ -1260,9 +1314,9 @@ function gridCardHTML(t, s) {
       <div class="serve-row">
         ${showServe && t.serve_method && t.status === 'active' ? `<span class="serve-chip">${serveIcon(t.serve_method)} ${esc(t.serve_method)}</span>` : ''}
         ${showGlass && t.glassware && t.status === 'active' ? `<span class="serve-chip">${glassIcon(t.glassware)} ${esc(t.glassware)}</span>` : ''}
-        ${dateStr ? `<span class="on-tap-date">Tapped ${dateStr}</span>` : ''}
+        ${dateStr && t.status !== 'coming-soon' ? `<span class="on-tap-date">Tapped ${dateStr}</span>` : ''}
       </div>
-      ${showKeg ? `<div class="keg-bar-wrap" style="flex-shrink:0"><div class="keg-bar-track" style="width:50px"><div class="keg-bar-fill" style="width:${t.keg_level}%;background:${kg}"></div></div><span class="keg-label">${t.keg_level}%</span></div>` : ''}
+      ${showKeg && t.status !== 'coming-soon' ? `<div class="keg-bar-wrap" style="flex-shrink:0"><div class="keg-bar-track" style="width:50px"><div class="keg-bar-fill" style="width:${t.keg_level}%;background:${kg}"></div></div><span class="keg-label">${t.keg_level}%</span></div>` : ''}
     </div>
   </div>`;
 }
@@ -1312,9 +1366,9 @@ function largeCardHTML(t, s) {
         <div class="serve-row">
           ${showServe && t.serve_method && t.status === 'active' ? `<span class="serve-chip">${serveIcon(t.serve_method)} ${esc(t.serve_method)}</span>` : ''}
           ${showGlass && t.glassware && t.status === 'active' ? `<span class="serve-chip">${glassIcon(t.glassware)} ${esc(t.glassware)}</span>` : ''}
-          ${dateStr ? `<span class="on-tap-date">Tapped ${dateStr}</span>` : ''}
+          ${dateStr && t.status !== 'coming-soon' ? `<span class="on-tap-date">Tapped ${dateStr}</span>` : ''}
         </div>
-        ${showKeg ? `<div class="keg-bar-wrap" style="flex-shrink:0;gap:0.4rem"><div class="keg-bar-track" style="width:60px"><div class="keg-bar-fill" style="width:${t.keg_level}%;background:${kg}"></div></div><span class="keg-label">${t.keg_level}%</span></div>` : ''}
+        ${showKeg && t.status !== 'coming-soon' ? `<div class="keg-bar-wrap" style="flex-shrink:0;gap:0.4rem"><div class="keg-bar-track" style="width:60px"><div class="keg-bar-fill" style="width:${t.keg_level}%;background:${kg}"></div></div><span class="keg-label">${t.keg_level}%</span></div>` : ''}
       </div>
     </div>
   </div>`;
@@ -1360,12 +1414,12 @@ function listCardHTML(t, s) {
         ${showCat ? `<span class="badge cat">${categoryLabel(t.category)}</span>` : ''}
         ${showServe && t.serve_method && t.status === 'active' ? `<span class="badge serve">${serveIcon(t.serve_method)} ${esc(t.serve_method)}</span>` : ''}
         ${showGlass && t.glassware && t.status === 'active' ? `<span class="badge">${glassIcon(t.glassware)} ${esc(t.glassware)}</span>` : ''}
-        ${dateStr ? `<span class="badge" style="color:var(--text-dim)">Tapped ${dateStr}</span>` : ''}
+        ${dateStr && t.status !== 'coming-soon' ? `<span class="badge" style="color:var(--text-dim)">Tapped ${dateStr}</span>` : ''}
       </div>
     </div>
     <div class="list-right">
       <span class="tap-status-badge ${statusClass(t.status)}">${statusChipLabel(t.status)}</span>
-      ${showKeg ? `<div class="keg-bar-wrap"><div class="keg-bar-track" style="width:56px"><div class="keg-bar-fill" style="width:${t.keg_level}%;background:${kg}"></div></div><span class="keg-label">${t.keg_level}%</span></div>` : ''}
+      ${showKeg && t.status !== 'coming-soon' ? `<div class="keg-bar-wrap"><div class="keg-bar-track" style="width:56px"><div class="keg-bar-fill" style="width:${t.keg_level}%;background:${kg}"></div></div><span class="keg-label">${t.keg_level}%</span></div>` : ''}
     </div>
   </div>`;
 }
@@ -1621,8 +1675,15 @@ function renderComingSoonPanel() {
         <div style="display:flex;align-items:center;gap:0.5rem">
           <span style="font-weight:600">${esc(t.name)}</span>
           ${t.brewfather_id ? '<span class="integration-badge">🍺 Brewfather</span>' : ''}
+          ${t.tap_number ? `<span class="integration-badge">📌 Pinned to Tap ${t.tap_number}</span>` : ''}
         </div>
-        <button class="btn btn-primary btn-sm" onclick="event.stopPropagation();promoteTap('${t.id}')" ${available.length ? '' : 'disabled title="No taps available"'}>→ Put on Tap</button>
+        <div style="display:flex;gap:0.4rem">
+          ${t.tap_number
+            ? `<button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();unpinTap('${t.id}')">Unpin</button>`
+            : `<button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();pinTap('${t.id}')" ${available.length ? '' : 'disabled title="No taps available"'}>📌 Pin to Tap</button>`
+          }
+          <button class="btn btn-primary btn-sm" onclick="event.stopPropagation();promoteTap('${t.id}')" ${available.length ? '' : 'disabled title="No taps available"'}>→ Put on Tap</button>
+        </div>
       </div>
     `).join('');
     return `
@@ -1671,6 +1732,37 @@ async function promoteTap(tapId) {
   try {
     await api('POST', `/taps/${tapId}/promote`, { tap_number: tapNumber });
     toast('Beer moved onto tap!', 'success');
+    await loadTaps();
+  } catch(e) {
+    toast(e.message, 'error');
+  }
+}
+
+async function pinTap(tapId) {
+  const available = computeAvailableTapNumbers();
+  if (!available.length) { toast('No taps available', 'error'); return; }
+
+  const choice = prompt(`Pin to which tap number? Available: ${available.join(', ')}`, String(available[0]));
+  if (choice === null) return;
+  const tapNumber = parseInt(choice, 10);
+  if (!available.includes(tapNumber)) {
+    toast(`Tap ${choice} is not available`, 'error');
+    return;
+  }
+
+  try {
+    await api('POST', `/taps/${tapId}/pin`, { tap_number: tapNumber });
+    toast('Beer pinned to tap!', 'success');
+    await loadTaps();
+  } catch(e) {
+    toast(e.message, 'error');
+  }
+}
+
+async function unpinTap(tapId) {
+  try {
+    await api('PUT', `/taps/${tapId}`, { tap_number: null });
+    toast('Beer unpinned', 'success');
     await loadTaps();
   } catch(e) {
     toast(e.message, 'error');
@@ -1882,6 +1974,20 @@ async function deleteTap() {
 }
 
 // ════════════════════════════════ SETTINGS ════════════════════════════════
+function renderHiddenTapsCheckboxes() {
+  const tapCount = parseInt(document.getElementById('s-tap-count').value, 10) || 12;
+  const hidden = new Set(
+    (state.settings.hidden_tap_numbers || '').split(',').map(s => parseInt(s.trim(), 10)).filter(n => Number.isInteger(n))
+  );
+  const container = document.getElementById('s-hidden-taps-grid');
+  container.innerHTML = '';
+  for (let n = 1; n <= tapCount; n++) {
+    const label = document.createElement('label');
+    label.style.cssText = 'display:inline-flex;align-items:center;gap:0.3rem;font-size:0.8rem;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:0.3rem 0.6rem;cursor:pointer';
+    label.innerHTML = `<input type="checkbox" class="hidden-tap-cb" value="${n}" ${hidden.has(n) ? 'checked' : ''}> ${n}`;
+    container.appendChild(label);
+  }
+}
 function loadSettingsForm() {
   const s = state.settings;
   document.getElementById('s-brewery-name').value = s.brewery_name || s.taproom_name || '';
@@ -1936,6 +2042,7 @@ function loadSettingsForm() {
   document.getElementById('s-pipeline-refresh').value = s.pipeline_refresh_mins || '0';
   document.getElementById('s-pipeline-packaged-label').value = s.pipeline_packaged_label || 'Packaged';
   document.getElementById('s-tap-count').value = s.tap_count || '12';
+  renderHiddenTapsCheckboxes();
 
   // QR codes / pages
   document.getElementById('s-show-qr-codes').checked = s.show_qr_codes !== '0';
@@ -2067,6 +2174,7 @@ async function saveSettings() {
       pipeline_refresh_mins: document.getElementById('s-pipeline-refresh').value || '0',
       pipeline_packaged_label: document.getElementById('s-pipeline-packaged-label').value || 'Packaged',
       tap_count: document.getElementById('s-tap-count').value || '12',
+      hidden_tap_numbers: Array.from(document.querySelectorAll('.hidden-tap-cb:checked')).map(cb => cb.value).join(','),
       show_qr_codes: document.getElementById('s-show-qr-codes').checked ? '1' : '0',
       menu_page_enabled: document.getElementById('s-menu-page-enabled').checked ? '1' : '0',
       custom_css: document.getElementById('s-custom-css').value || '',
