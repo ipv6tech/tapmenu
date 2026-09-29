@@ -1660,8 +1660,15 @@ function renderComingSoonPanel() {
         <div style="display:flex;align-items:center;gap:0.5rem">
           <span style="font-weight:600">${esc(t.name)}</span>
           ${t.brewfather_id ? '<span class="integration-badge">🍺 Brewfather</span>' : ''}
+          ${t.tap_number ? `<span class="integration-badge">📌 Pinned to Tap ${t.tap_number}</span>` : ''}
         </div>
-        <button class="btn btn-primary btn-sm" onclick="event.stopPropagation();promoteTap('${t.id}')" ${available.length ? '' : 'disabled title="No taps available"'}>→ Put on Tap</button>
+        <div style="display:flex;gap:0.4rem">
+          ${t.tap_number
+            ? `<button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();unpinTap('${t.id}')">Unpin</button>`
+            : `<button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();pinTap('${t.id}')" ${available.length ? '' : 'disabled title="No taps available"'}>📌 Pin to Tap</button>`
+          }
+          <button class="btn btn-primary btn-sm" onclick="event.stopPropagation();promoteTap('${t.id}')" ${available.length ? '' : 'disabled title="No taps available"'}>→ Put on Tap</button>
+        </div>
       </div>
     `).join('');
     return `
@@ -1710,6 +1717,37 @@ async function promoteTap(tapId) {
   try {
     await api('POST', `/taps/${tapId}/promote`, { tap_number: tapNumber });
     toast('Beer moved onto tap!', 'success');
+    await loadTaps();
+  } catch(e) {
+    toast(e.message, 'error');
+  }
+}
+
+async function pinTap(tapId) {
+  const available = computeAvailableTapNumbers();
+  if (!available.length) { toast('No taps available', 'error'); return; }
+
+  const choice = prompt(`Pin to which tap number? Available: ${available.join(', ')}`, String(available[0]));
+  if (choice === null) return;
+  const tapNumber = parseInt(choice, 10);
+  if (!available.includes(tapNumber)) {
+    toast(`Tap ${choice} is not available`, 'error');
+    return;
+  }
+
+  try {
+    await api('POST', `/taps/${tapId}/pin`, { tap_number: tapNumber });
+    toast('Beer pinned to tap!', 'success');
+    await loadTaps();
+  } catch(e) {
+    toast(e.message, 'error');
+  }
+}
+
+async function unpinTap(tapId) {
+  try {
+    await api('PUT', `/taps/${tapId}`, { tap_number: null });
+    toast('Beer unpinned', 'success');
     await loadTaps();
   } catch(e) {
     toast(e.message, 'error');
