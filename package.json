@@ -1,6 +1,6 @@
 {
   "name": "tap-menu",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "Self-hosted digital draft beverage list",
   "license": "MIT",
   "main": "server.js",
