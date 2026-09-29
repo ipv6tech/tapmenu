@@ -107,6 +107,10 @@ body { font-family: var(--font-body); background: var(--bg); color: var(--text);
 .display-header.logo-as-brand img.logo { height: 64px; margin: 0 auto 0.4rem; display: block; }
 .display-header h1 { font-family: var(--font-display); font-size: clamp(1.6rem, 4vw, 3rem); letter-spacing: 0.1em; line-height: 1; }
 .display-header .tagline { color: var(--text-muted); font-size: 0.72rem; letter-spacing: 0.25em; text-transform: uppercase; margin-top: 0.3rem; }
+.display-page-dots { display: flex; justify-content: center; gap: 0.4rem; padding: 0.75rem 0; }
+.display-page-dots.hidden { display: none; }
+.display-page-dots .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--border2); }
+.display-page-dots .dot.active { background: var(--accent); }
 .theme-toggle-btn {
   position: absolute; top: 0.75rem; right: 1.25rem;
   background: none; border: 1px solid var(--border); border-radius: 8px;
@@ -354,6 +358,7 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px;
     <div class="tagline" id="display-tagline">What's on tap</div>
   </div>
   <div class="tap-grid layout-grid" id="display-grid"></div>
+  <div class="display-page-dots hidden" id="display-page-dots"></div>
   <div id="pipeline-section" class="hidden">
     <div class="pipeline-header">
       <span class="pipeline-header-title" id="pipeline-title">Coming Soon</span>
@@ -960,6 +965,7 @@ let state = {
   taps: [], settings: {}, beers: [],
   menuFilter: 'all',
   currentLayout: 'grid',
+  displayPage: 0,
   authenticated: false, editingId: null,
 };
 
@@ -1226,7 +1232,16 @@ function emptyCardHTML(number) {
 
 function renderDisplay() {
   const s = state.settings;
-  const slots = buildTapSlots();
+  const allSlots = buildTapSlots();
+  const perPage = parseInt(s.taps_per_page, 10) || 0;
+  const pageCount = perPage > 0 ? Math.ceil(allSlots.length / perPage) : 1;
+  if (state.displayPage >= pageCount) state.displayPage = 0;
+  if (state.displayPage < 0) state.displayPage = 0;
+
+  const slots = (perPage > 0 && pageCount > 1)
+    ? allSlots.slice(state.displayPage * perPage, (state.displayPage + 1) * perPage)
+    : allSlots;
+
   const grid = document.getElementById('display-grid');
   grid.className = `tap-grid layout-${state.currentLayout}`;
   if (!slots.length) {
@@ -1239,6 +1254,18 @@ function renderDisplay() {
              gridCardHTML(slot.tap, s);
     }).join('');
   }
+
+  const dotsEl = document.getElementById('display-page-dots');
+  if (pageCount > 1) {
+    dotsEl.classList.remove('hidden');
+    dotsEl.innerHTML = Array.from({ length: pageCount }, (_, i) =>
+      `<div class="dot${i === state.displayPage ? ' active' : ''}"></div>`
+    ).join('');
+  } else {
+    dotsEl.classList.add('hidden');
+    dotsEl.innerHTML = '';
+  }
+
   renderPipeline();
 }
 
