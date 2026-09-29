@@ -575,7 +575,11 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px;
             <h3>Taps</h3>
             <div class="form-group" style="margin-bottom:0">
               <label class="form-label">Total Taps <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-dim)">(used to compute which tap numbers are available)</span></label>
-              <input class="form-input" id="s-tap-count" type="number" min="1" style="max-width:120px" placeholder="12">
+              <input class="form-input" id="s-tap-count" type="number" min="1" style="max-width:120px" placeholder="12" onchange="renderHiddenTapsCheckboxes()">
+            </div>
+            <div class="form-group" style="margin-top:0.875rem;margin-bottom:0">
+              <label class="form-label">Hidden Taps <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-dim)">(excluded from the public display entirely)</span></label>
+              <div id="s-hidden-taps-grid" style="display:flex;flex-wrap:wrap;gap:0.5rem"></div>
             </div>
           </div>
           <div class="settings-card">
@@ -1917,6 +1921,20 @@ async function deleteTap() {
 }
 
 // ════════════════════════════════ SETTINGS ════════════════════════════════
+function renderHiddenTapsCheckboxes() {
+  const tapCount = parseInt(document.getElementById('s-tap-count').value, 10) || 12;
+  const hidden = new Set(
+    (state.settings.hidden_tap_numbers || '').split(',').map(s => parseInt(s.trim(), 10)).filter(n => Number.isInteger(n))
+  );
+  const container = document.getElementById('s-hidden-taps-grid');
+  container.innerHTML = '';
+  for (let n = 1; n <= tapCount; n++) {
+    const label = document.createElement('label');
+    label.style.cssText = 'display:inline-flex;align-items:center;gap:0.3rem;font-size:0.8rem;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:0.3rem 0.6rem;cursor:pointer';
+    label.innerHTML = `<input type="checkbox" class="hidden-tap-cb" value="${n}" ${hidden.has(n) ? 'checked' : ''}> ${n}`;
+    container.appendChild(label);
+  }
+}
 function loadSettingsForm() {
   const s = state.settings;
   document.getElementById('s-brewery-name').value = s.brewery_name || s.taproom_name || '';
@@ -1971,6 +1989,7 @@ function loadSettingsForm() {
   document.getElementById('s-pipeline-refresh').value = s.pipeline_refresh_mins || '0';
   document.getElementById('s-pipeline-packaged-label').value = s.pipeline_packaged_label || 'Packaged';
   document.getElementById('s-tap-count').value = s.tap_count || '12';
+  renderHiddenTapsCheckboxes();
 
   // QR codes / pages
   document.getElementById('s-show-qr-codes').checked = s.show_qr_codes !== '0';
@@ -2102,6 +2121,7 @@ async function saveSettings() {
       pipeline_refresh_mins: document.getElementById('s-pipeline-refresh').value || '0',
       pipeline_packaged_label: document.getElementById('s-pipeline-packaged-label').value || 'Packaged',
       tap_count: document.getElementById('s-tap-count').value || '12',
+      hidden_tap_numbers: Array.from(document.querySelectorAll('.hidden-tap-cb:checked')).map(cb => cb.value).join(','),
       show_qr_codes: document.getElementById('s-show-qr-codes').checked ? '1' : '0',
       menu_page_enabled: document.getElementById('s-menu-page-enabled').checked ? '1' : '0',
       custom_css: document.getElementById('s-custom-css').value || '',
