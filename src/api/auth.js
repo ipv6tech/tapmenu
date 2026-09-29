@@ -85,12 +85,16 @@ router.post('/upload-logo', requireAuth, upload.single('logo'), (req, res) => {
   res.json({ url });
 });
 
-// GET settings (public)
+// GET settings (public; Brewfather credentials are stripped unless authenticated)
 router.get('/settings', (req, res) => {
   const db = getDb();
   const rows = db.prepare('SELECT key, value FROM settings').all();
   const settings = {};
   rows.forEach(r => { settings[r.key] = r.value; });
+  if (!(req.session && req.session.userId)) {
+    delete settings.brewfather_api_key;
+    delete settings.brewfather_api_user_id;
+  }
   res.json(settings);
 });
 
