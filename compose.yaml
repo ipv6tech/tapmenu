@@ -3,7 +3,7 @@ name: tapmenu
 services:
   tapmenu:
     build: .
-    image: tapmenu:0.1
+    image: tapmenu:${TAPMENU_VERSION:-latest}
     container_name: tapmenu
     restart: unless-stopped
     ports:

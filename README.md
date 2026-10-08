@@ -1,9 +1,5 @@
 # 🍺 Tap Menu: Self-Hosted Digital Draft List
 
-<!--
-  Replace OWNER below with your GitHub username/org once this is pushed,
-  so the badges and image references point at the right place.
--->
 [![Publish Docker image](https://github.com/ipv6tech/tapmenu/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/ipv6tech/tapmenu/actions/workflows/docker-publish.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
@@ -38,13 +34,13 @@ A self-hosted digital menu for your home taproom, bar, or kegerator setup. Featu
 ### 1. Clone / download this project
 
 ```bash
-git clone <your-repo> tap-menu
-cd tap-menu
+git clone https://github.com/ipv6tech/tapmenu.git
+cd tapmenu
 ```
 
 ### 2. Edit the session secret
 
-Open `docker-compose.yml` and change:
+Open `compose.yaml` and change:
 ```yaml
 SESSION_SECRET=change-me-to-a-long-random-string
 ```
@@ -53,8 +49,10 @@ to something random and secure.
 ### 3. Start it up
 
 ```bash
-docker compose up -d
+npm run docker:up
 ```
+
+This builds and starts the container, tagging the image with the current version from `package.json` (e.g. `tapmenu:0.5.2`) so `docker images` always reflects what's actually running. Plain `docker compose up -d --build` still works too — it just tags the image `tapmenu:latest` instead.
 
 ### 4. Open the app
 
@@ -67,7 +65,9 @@ On first visit to `/admin`, you'll be prompted to create your admin account.
 
 ## Run the Published Image (GHCR)
 
-Instead of building locally, you can pull a pre-built image published to GitHub Container Registry on every tagged release:
+Instead of building locally, you can pull a pre-built image published to GitHub Container Registry on every tagged release. Images are built for both `linux/amd64` and `linux/arm64` (Raspberry Pi, Apple Silicon, etc.), tagged by version (`:0.5.2`, `:0.5`, `:0`) plus a rolling `:latest`.
+
+### docker run
 
 ```bash
 docker run -d \
@@ -78,13 +78,48 @@ docker run -d \
   ghcr.io/ipv6tech/tapmenu:latest
 ```
 
-Or point `docker-compose.yml`'s `build: .` at `image: ghcr.io/ipv6tech/tapmenu:latest` instead. Images are built for both `linux/amd64` and `linux/arm64` (Raspberry Pi, Apple Silicon, etc.), tagged by version (`:1.2.3`, `:1.2`, `:1`) plus a rolling `:latest`.
+### docker compose
+
+Skip the `build:` step entirely and pull straight from GHCR:
+
+```yaml
+name: tapmenu
+
+services:
+  tapmenu:
+    image: ghcr.io/ipv6tech/tapmenu:latest
+    container_name: tapmenu
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - tapmenu-data:/data
+    environment:
+      - PORT=3000
+      - SESSION_SECRET=change-me-to-a-long-random-string
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/api/auth/me"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  tapmenu-data:
+    driver: local
+```
+
+```bash
+docker compose up -d
+docker compose pull && docker compose up -d   # to update later
+```
+
+Pin `:latest` to a specific version tag (e.g. `ghcr.io/ipv6tech/tapmenu:0.5.2`) if you want updates to be a deliberate, explicit step rather than automatic on every pull.
 
 ---
 
 ## Ports & Networking
 
-By default the app runs on port **3000**. To change it, edit `docker-compose.yml`:
+By default the app runs on port **3000**. To change it, edit `compose.yaml`:
 
 ```yaml
 ports:
@@ -135,8 +170,7 @@ docker restart tapmenu
 
 ```bash
 docker compose pull   # if using a registry
-docker compose build  # if building locally
-docker compose up -d  # restarts with new image, data preserved
+npm run docker:up     # if building locally — rebuilds and re-tags with the current package.json version
 ```
 
 ---
@@ -189,7 +223,7 @@ App runs at http://localhost:3000
 
 ## Contributing
 
-Issues and PRs are welcome — this is a small self-hosted project, so keep changes focused and test them against a real Docker rebuild before submitting (see `docker compose build && docker compose up -d`).
+Issues and PRs are welcome — this is a small self-hosted project, so keep changes focused and test them against a real Docker rebuild before submitting (see `npm run docker:up`).
 
 ---
 
