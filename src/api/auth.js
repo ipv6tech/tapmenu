@@ -4,6 +4,10 @@ const bcrypt = require('bcryptjs');
 const { v4: uuidv4 } = require('uuid');
 const { getDb } = require('../db');
 const { upload } = require('../upload');
+const { rateLimit, isSafeUrl } = require('../security');
+
+const loginLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 10, message: 'Too many attempts, try again in 15 minutes' });
+const MIN_PASSWORD_LENGTH = 8;
 
 function requireAuth(req, res, next) {
   if (req.session && req.session.userId) return next();
@@ -11,7 +15,7 @@ function requireAuth(req, res, next) {
 }
 
 // Login
-router.post('/login', (req, res) => {
+router.post('/login', loginLimiter, (req, res) => {
   const db = getDb();
   const { username, password } = req.body;
   if (!username || !password) return res.status(400).json({ error: 'Username and password required' });
@@ -21,9 +25,13 @@ router.post('/login', (req, res) => {
     return res.status(401).json({ error: 'Invalid credentials' });
   }
 
-  req.session.userId = user.id;
-  req.session.username = user.username;
-  res.json({ success: true, username: user.username });
+  // New session id on login prevents session fixation
+  req.session.regenerate(err => {
+    if (err) return res.status(500).json({ error: 'Login failed' });
+    req.session.userId = user.id;
+    req.session.username = user.username;
+    res.json({ success: true, username: user.username });
+  });
 });
 
 // Logout
@@ -42,7 +50,7 @@ router.get('/me', (req, res) => {
 });
 
 // Setup first admin (only works if no users exist)
-router.post('/setup', (req, res) => {
+router.post('/setup', loginLimiter, (req, res) => {
   const db = getDb();
   const existing = db.prepare('SELECT COUNT(*) as count FROM users').get();
   if (existing.count > 0) {
@@ -50,8 +58,8 @@ router.post('/setup', (req, res) => {
   }
 
   const { username, password } = req.body;
-  if (!username || !password || password.length < 6) {
-    return res.status(400).json({ error: 'Username and password (min 6 chars) required' });
+  if (typeof username !== 'string' || typeof password !== 'string' || !username || password.length < MIN_PASSWORD_LENGTH) {
+    return res.status(400).json({ error: `Username and password (min ${MIN_PASSWORD_LENGTH} chars) required` });
   }
 
   const id = uuidv4();
@@ -66,6 +74,9 @@ router.post('/setup', (req, res) => {
 router.post('/change-password', requireAuth, (req, res) => {
   const db = getDb();
   const { current_password, new_password } = req.body;
+  if (typeof current_password !== 'string' || typeof new_password !== 'string' || new_password.length < MIN_PASSWORD_LENGTH) {
+    return res.status(400).json({ error: `New password must be at least ${MIN_PASSWORD_LENGTH} characters` });
+  }
   const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.session.userId);
   if (!bcrypt.compareSync(current_password, user.password_hash)) {
     return res.status(401).json({ error: 'Current password incorrect' });
@@ -115,6 +126,12 @@ router.put('/settings', requireAuth, (req, res) => {
     'accent_color', 'logo_url', 'display_layout', 'use_logo_as_brand', 'logo_size',
     'brewfather_api_user_id', 'brewfather_api_key'
   ];
+  if (req.body.logo_url !== undefined && !isSafeUrl(req.body.logo_url)) {
+    return res.status(400).json({ error: 'logo_url must be an http(s) URL or /uploads path' });
+  }
+  if (req.body.accent_color !== undefined && req.body.accent_color !== '' && !/^#[0-9a-fA-F]{6}$/.test(req.body.accent_color)) {
+    return res.status(400).json({ error: 'accent_color must be a hex value like #f59e0b' });
+  }
   try {
     for (const [key, value] of Object.entries(req.body)) {
       if (allowed.includes(key)) {
@@ -124,7 +141,7 @@ router.put('/settings', requireAuth, (req, res) => {
     res.json({ success: true });
   } catch (err) {
     console.error('Settings save error:', err);
-    res.status(500).json({ error: 'Failed to save settings: ' + err.message });
+    res.status(500).json({ error: 'Failed to save settings' });
   }
 });
 

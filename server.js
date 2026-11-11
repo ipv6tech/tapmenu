@@ -3,8 +3,9 @@ const cors = require('cors');
 const helmet = require('helmet');
 const session = require('express-session');
 const path = require('path');
+const { getSessionSecret } = require('./src/security');
 
-const { initDb, UPLOADS_DIR } = require('./src/db');
+const { initDb, UPLOADS_DIR, DB_PATH: DATA_FILE_HINT } = require('./src/db');
 const tapsRouter = require('./src/api/taps');
 const authRouter = require('./src/api/auth');
 const qrRouter = require('./src/api/qr');
@@ -18,6 +19,7 @@ async function start() {
   console.log('✅ Database initialized');
 
   const app = express();
+  if (process.env.TRUST_PROXY) app.set('trust proxy', process.env.TRUST_PROXY === 'true' ? 1 : process.env.TRUST_PROXY);
 
   app.use(helmet({ contentSecurityPolicy: false }));
   app.use(cors());
@@ -25,10 +27,16 @@ async function start() {
   app.use(express.urlencoded({ extended: true }));
 
   app.use(session({
-    secret: process.env.SESSION_SECRET || 'tapmenu-secret-change-me-in-production',
+    secret: getSessionSecret(path.dirname(DATA_FILE_HINT)),
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: false, maxAge: 7 * 24 * 60 * 60 * 1000 }
+    cookie: {
+      httpOnly: true,
+      sameSite: 'lax',
+      // Set COOKIE_SECURE=true when served over HTTPS (and TRUST_PROXY=true behind a proxy)
+      secure: process.env.COOKIE_SECURE === 'true',
+      maxAge: 7 * 24 * 60 * 60 * 1000
+    }
   }));
 
   app.use('/api/taps', tapsRouter);
@@ -37,7 +45,12 @@ async function start() {
   app.use('/api/brewfather', brewfatherRouter);
   app.use('/api/beers', beersRouter);
 
-  app.use('/uploads', express.static(UPLOADS_DIR));
+  // Uploads are user-supplied: never let them execute script in the app's origin
+  app.use('/uploads', (req, res, next) => {
+    res.set('X-Content-Type-Options', 'nosniff');
+    res.set('Content-Security-Policy', "default-src 'none'; img-src 'self'; style-src 'unsafe-inline'; sandbox");
+    next();
+  }, express.static(UPLOADS_DIR));
   app.use(express.static(path.join(__dirname, 'public')));
   app.get('/*splat', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 

@@ -513,7 +513,7 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px;
                     📁 Choose image…
                     <input type="file" id="s-logo-file" accept="image/*" style="display:none" onchange="previewLogoFile(this)">
                   </label>
-                  <span id="logo-file-name" style="font-size:0.78rem;color:var(--text-muted)">PNG, JPG, GIF, SVG, WebP — max 2MB</span>
+                  <span id="logo-file-name" style="font-size:0.78rem;color:var(--text-muted)">PNG, JPG, GIF, WebP — max 2MB</span>
                 </div>
                 <div id="logo-preview-wrap" style="display:none;margin-top:0.625rem;display:flex;align-items:center;gap:0.75rem">
                   <img id="logo-preview-img" style="height:48px;max-width:160px;object-fit:contain;border-radius:6px;border:1px solid var(--border);background:var(--surface2);padding:4px">
@@ -903,7 +903,7 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px;
             📁 Choose image…
             <input type="file" id="f-image-file" accept="image/*" style="display:none" onchange="previewTapImageFile(this)">
           </label>
-          <span id="image-file-name" style="font-size:0.78rem;color:var(--text-muted)">PNG, JPG, GIF, SVG, WebP — max 2MB</span>
+          <span id="image-file-name" style="font-size:0.78rem;color:var(--text-muted)">PNG, JPG, GIF, WebP — max 2MB</span>
         </div>
         <div id="image-preview-wrap" style="display:none;margin-top:0.625rem;display:flex;align-items:center;gap:0.75rem">
           <img id="image-preview-img" style="height:48px;max-width:160px;object-fit:contain;border-radius:6px;border:1px solid var(--border);background:var(--surface2);padding:4px">
@@ -1159,13 +1159,16 @@ function esc(s) {
 function truncate(str, n) {
   return str.length > n ? str.slice(0, n) + '…' : str;
 }
+function safeColor(c) { return /^#[0-9a-fA-F]{3,8}$/.test(c || '') ? c : 'var(--accent)'; }
+function safeUrl(u) { return /^(https?:\/\/|\/(?!\/))/i.test(String(u || '').trim()) ? esc(u) : '#'; }
+function kegNum(l) { const n = Number(l); return Number.isFinite(n) ? Math.min(100, Math.max(0, n)) : 0; }
 function kegCol(l) { return l > 50 ? '#22c55e' : l > 20 ? '#f59e0b' : '#ef4444'; }
 function statusClass(s) { return s === 'active' ? 'active' : s === 'coming-soon' ? 'coming-soon' : s === 'hidden' ? 'hidden' : 'kicked'; }
 function statusLabel(s) { return s === 'active' ? 'On Tap' : s === 'coming-soon' ? 'Coming Soon' : s === 'hidden' ? 'Hidden' : s; }
 function statusChipLabel(s) { return s === 'coming-soon' ? 'Soon' : s === 'active' ? 'On Tap' : s === 'hidden' ? 'Hidden' : s; }
 function categoryLabel(cat) {
   const map = {'beer':'🍺 Beer','craft-beer':'🍻 Craft','ipa':'🌿 IPA','lager':'🥂 Lager','stout':'🖤 Stout','sour':'🍋 Sour','wheat':'🌾 Wheat','mead':'🍯 Mead','cider':'🍎 Cider','seltzer':'💧 Seltzer','wine':'🍷 Wine','cocktail':'🍹 Cocktail','spirit':'🥃 Spirit','kombucha':'🫖 Kombucha','cold-brew':'☕ Cold Brew','nitro-coffee':'☕ Nitro','other':'✨ Other'};
-  return map[cat] || cat;
+  return map[cat] || esc(cat);
 }
 function serveIcon(m) {
   const map = {'Draft':'🍺','Nitro':'💧','Cask':'🪣','Beer Engine':'⚙️','Side Pour':'↗️','Gravity':'⬇️','Bottle':'🍾','Can':'🥤','Crowler':'🥤','Growler':'🫙','On Ice':'🧊','Cocktail Tap':'🍹'};
@@ -1293,7 +1296,7 @@ function renderPipeline() {
   document.getElementById('pipeline-count').textContent = pipeline.length;
 
   document.getElementById('pipeline-row').innerHTML = pipeline.map(t => {
-    const col = t.color || 'var(--accent)';
+    const col = safeColor(t.color);
     // Derive a readable status label
     const STAGE_LABELS = { planned: 'Planned', brewing: 'Brewing', fermenting: 'Fermenting' };
     const statusLabel = t.pipeline_stage === 'packaged'
@@ -1358,7 +1361,7 @@ function setLayout(l) { state.currentLayout = l; renderDisplay(); }
 
 // ── Compact grid card ──
 function gridCardHTML(t, s) {
-  const col = t.color || 'var(--accent)';
+  const col = safeColor(t.color);
   const kg = kegCol(t.keg_level);
   const showAbv = s.show_abv !== '0', showIbu = s.show_ibu !== '0';
   const showKeg = s.show_keg_level !== '0', showPrice = s.show_price === '1';
@@ -1403,14 +1406,14 @@ function gridCardHTML(t, s) {
         ${showGlass && t.glassware && t.status === 'active' ? `<span class="serve-chip">${glassIcon(t.glassware)} ${esc(t.glassware)}</span>` : ''}
         ${dateStr && t.status !== 'coming-soon' ? `<span class="on-tap-date">Tapped ${dateStr}</span>` : ''}
       </div>
-      ${showKeg && t.status !== 'coming-soon' ? `<div class="keg-bar-wrap" style="flex-shrink:0"><div class="keg-bar-track" style="width:50px"><div class="keg-bar-fill" style="width:${t.keg_level}%;background:${kg}"></div></div><span class="keg-label">${t.keg_level}%</span></div>` : ''}
+      ${showKeg && t.status !== 'coming-soon' ? `<div class="keg-bar-wrap" style="flex-shrink:0"><div class="keg-bar-track" style="width:50px"><div class="keg-bar-fill" style="width:${kegNum(t.keg_level)}%;background:${kg}"></div></div><span class="keg-label">${kegNum(t.keg_level)}%</span></div>` : ''}
     </div>
   </div>`;
 }
 
 // ── Large card ──
 function largeCardHTML(t, s) {
-  const col = t.color || 'var(--accent)';
+  const col = safeColor(t.color);
   const kg = kegCol(t.keg_level);
   const showAbv = s.show_abv !== '0', showIbu = s.show_ibu !== '0';
   const showKeg = s.show_keg_level !== '0', showPrice = s.show_price === '1';
@@ -1455,7 +1458,7 @@ function largeCardHTML(t, s) {
           ${showGlass && t.glassware && t.status === 'active' ? `<span class="serve-chip">${glassIcon(t.glassware)} ${esc(t.glassware)}</span>` : ''}
           ${dateStr && t.status !== 'coming-soon' ? `<span class="on-tap-date">Tapped ${dateStr}</span>` : ''}
         </div>
-        ${showKeg && t.status !== 'coming-soon' ? `<div class="keg-bar-wrap" style="flex-shrink:0;gap:0.4rem"><div class="keg-bar-track" style="width:60px"><div class="keg-bar-fill" style="width:${t.keg_level}%;background:${kg}"></div></div><span class="keg-label">${t.keg_level}%</span></div>` : ''}
+        ${showKeg && t.status !== 'coming-soon' ? `<div class="keg-bar-wrap" style="flex-shrink:0;gap:0.4rem"><div class="keg-bar-track" style="width:60px"><div class="keg-bar-fill" style="width:${kegNum(t.keg_level)}%;background:${kg}"></div></div><span class="keg-label">${kegNum(t.keg_level)}%</span></div>` : ''}
       </div>
     </div>
   </div>`;
@@ -1463,7 +1466,7 @@ function largeCardHTML(t, s) {
 
 // ── List card ──
 function listCardHTML(t, s) {
-  const col = t.color || 'var(--accent)';
+  const col = safeColor(t.color);
   const kg = kegCol(t.keg_level);
   const showAbv = s.show_abv !== '0', showIbu = s.show_ibu !== '0';
   const showKeg = s.show_keg_level !== '0', showPrice = s.show_price === '1';
@@ -1506,7 +1509,7 @@ function listCardHTML(t, s) {
     </div>
     <div class="list-right">
       <span class="tap-status-badge ${statusClass(t.status)}">${statusChipLabel(t.status)}</span>
-      ${showKeg && t.status !== 'coming-soon' ? `<div class="keg-bar-wrap"><div class="keg-bar-track" style="width:56px"><div class="keg-bar-fill" style="width:${t.keg_level}%;background:${kg}"></div></div><span class="keg-label">${t.keg_level}%</span></div>` : ''}
+      ${showKeg && t.status !== 'coming-soon' ? `<div class="keg-bar-wrap"><div class="keg-bar-track" style="width:56px"><div class="keg-bar-fill" style="width:${kegNum(t.keg_level)}%;background:${kg}"></div></div><span class="keg-label">${kegNum(t.keg_level)}%</span></div>` : ''}
     </div>
   </div>`;
 }
@@ -1531,7 +1534,7 @@ function renderMobileMenu() {
   const showDescription = s.show_description !== '0', showServingSize = s.show_serving_size !== '0';
   const showNotes = s.show_tasting_notes !== '0';
   list.innerHTML = filtered.map(t => {
-    const col = t.color || 'var(--accent)';
+    const col = safeColor(t.color);
     const kg = kegCol(t.keg_level);
     const lbl = tapLabel(t);
     const dateStr = showDate && t.on_tap_date ? formatDate(t.on_tap_date) : null;
@@ -1566,7 +1569,7 @@ function renderMobileMenu() {
           ${showGlass && t.glassware && t.status === 'active' ? `<span class="badge">${glassIcon(t.glassware)} ${esc(t.glassware)}</span>` : ''}
           ${dateStr ? `<span class="badge" style="color:var(--text-dim)">Tapped ${dateStr}</span>` : ''}
         </div>
-        ${showKeg ? `<div class="keg-bar-wrap" style="margin-top:0.5rem"><div class="keg-bar-track"><div class="keg-bar-fill" style="width:${t.keg_level}%;background:${kg}"></div></div><span class="keg-label">${t.keg_level}%</span></div>` : ''}
+        ${showKeg ? `<div class="keg-bar-wrap" style="margin-top:0.5rem"><div class="keg-bar-track"><div class="keg-bar-fill" style="width:${kegNum(t.keg_level)}%;background:${kg}"></div></div><span class="keg-label">${kegNum(t.keg_level)}%</span></div>` : ''}
       </div>
     </div>`;
   }).join('');
@@ -1578,7 +1581,7 @@ async function openTapModal(id) {
   const tap = state.taps.find(t => t.id === id) || await api('GET', '/taps/' + id).catch(() => null);
   if (!tap) return;
   const s = state.settings;
-  const col = tap.color || 'var(--accent)';
+  const col = safeColor(tap.color);
   document.getElementById('modal-color-band').style.background = col;
   const lbl = tapLabel(tap);
   document.getElementById('modal-tap-label').textContent = lbl;
@@ -1618,8 +1621,8 @@ async function openTapModal(id) {
   // Keg
   if (showKeg) html += `<div class="modal-section"><div class="modal-section-title">Keg Level</div>
     <div style="display:flex;align-items:center;gap:0.875rem">
-      <div style="flex:1;height:8px;background:var(--surface2);border-radius:4px;overflow:hidden"><div style="width:${tap.keg_level}%;height:100%;background:${kg};border-radius:4px"></div></div>
-      <span style="font:600 1rem var(--font-mono);color:${kg}">${tap.keg_level}%</span>
+      <div style="flex:1;height:8px;background:var(--surface2);border-radius:4px;overflow:hidden"><div style="width:${kegNum(tap.keg_level)}%;height:100%;background:${kg};border-radius:4px"></div></div>
+      <span style="font:600 1rem var(--font-mono);color:${kg}">${kegNum(tap.keg_level)}%</span>
     </div></div>`;
 
   if (tap.description) html += `<div class="modal-section"><div class="modal-section-title">Description</div><div class="modal-description">${esc(tap.description)}</div></div>`;
@@ -1627,7 +1630,7 @@ async function openTapModal(id) {
 
   // Links
   const links = [];
-  if (tap.untappd_url) links.push(`<a class="modal-link untappd" href="${esc(tap.untappd_url)}" target="_blank" rel="noopener">🍻 Untappd</a>`);
+  if (tap.untappd_url) links.push(`<a class="modal-link untappd" href="${safeUrl(tap.untappd_url)}" target="_blank" rel="noopener">🍻 Untappd</a>`);
   if (tap.brewfather_id) {
     const batchLabel = tap.brewfather_batch_no ? `🍺 Brewfather Batch #${tap.brewfather_batch_no}` : '🍺 Brewfather';
     links.push(`<span class="integration-badge">${batchLabel}</span>`);
@@ -1709,7 +1712,7 @@ function renderAdminTable() {
     <td style="font:400 0.72rem var(--font-mono);color:var(--text-muted)">${t.on_tap_date ? formatDate(t.on_tap_date) : '—'}</td>
     <td style="font:400 0.72rem var(--font-mono);color:var(--text-muted)">${t.brewfather_batch_no ? `<span style="color:var(--purple)">#${t.brewfather_batch_no}</span>` : '—'}</td>
     <td style="font:400 0.68rem var(--font-mono);color:var(--text-dim);white-space:nowrap">${t.last_synced_at ? `<span title="${t.last_synced_at}">${timeAgo(t.last_synced_at)}</span>` : (t.brewfather_id ? '<span style="color:var(--accent)">Never</span>' : '—')}</td>
-    <td><div class="keg-mini"><div class="keg-mini-bar"><div class="keg-mini-fill" style="width:${t.keg_level}%;background:${kegCol(t.keg_level)}"></div></div><span style="font:400 0.66rem var(--font-mono);color:var(--text-dim)">${t.keg_level}%</span></div></td>
+    <td><div class="keg-mini"><div class="keg-mini-bar"><div class="keg-mini-fill" style="width:${kegNum(t.keg_level)}%;background:${kegCol(t.keg_level)}"></div></div><span style="font:400 0.66rem var(--font-mono);color:var(--text-dim)">${kegNum(t.keg_level)}%</span></div></td>
     <td><span class="tap-status-badge ${statusClass(t.status)}">${statusLabel(t.status)}</span></td>
     <td style="text-align:right"><div style="display:flex;justify-content:flex-end;gap:0.3rem">
       <button class="btn btn-secondary btn-sm btn-icon" onclick="event.stopPropagation();openTapModal('${t.id}')" title="View">👁</button>
@@ -2177,7 +2180,7 @@ function previewLogoFile(input) {
 
 function clearLogoFile() {
   document.getElementById('s-logo-file').value = '';
-  document.getElementById('logo-file-name').textContent = 'PNG, JPG, GIF, SVG, WebP — max 2MB';
+  document.getElementById('logo-file-name').textContent = 'PNG, JPG, GIF, WebP — max 2MB';
   document.getElementById('logo-preview-wrap').style.display = 'none';
 }
 
@@ -2206,7 +2209,7 @@ function previewTapImageFile(input) {
 
 function clearTapImageFile() {
   document.getElementById('f-image-file').value = '';
-  document.getElementById('image-file-name').textContent = 'PNG, JPG, GIF, SVG, WebP — max 2MB';
+  document.getElementById('image-file-name').textContent = 'PNG, JPG, GIF, WebP — max 2MB';
   document.getElementById('image-preview-wrap').style.display = 'none';
 }
 

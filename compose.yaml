@@ -12,7 +12,11 @@ services:
       - tapmenu-data:/data
     environment:
       - PORT=3000
-      - SESSION_SECRET=change-me-to-a-long-random-string
+      # Optional: set a long random value. If unset, a secret is generated and stored in the data volume.
+      # - SESSION_SECRET=
+      # Behind an HTTPS reverse proxy, enable these so the session cookie is marked Secure:
+      # - TRUST_PROXY=true
+      # - COOKIE_SECURE=true
       # Optional: set DB path (default is /data/taproom.db)
       # - DB_PATH=/data/taproom.db
     healthcheck:
