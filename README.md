@@ -20,12 +20,12 @@ A self-hosted digital menu for your home taproom, bar, or kegerator setup. Featu
 - **🔗 Untappd Links** — Link any tap directly to its Untappd page
 - **📱 QR Codes** — Auto-generated per tap; scan to see full tasting notes
 - **🍻 Brewfather Integration** — Fetch batches by status (Planning/Brewing/Fermenting/Conditioning/Completed), import single or bulk, and sync individual taps or all linked taps; batch status maps automatically to tap status
-- **🖼️ Logo & Beer Images** — Upload a logo or per-tap beer image directly (or use a URL); uploads persist across container rebuilds, and the logo can double as the browser tab favicon
+- **🖼️ Logo & Beer Images** — Upload a logo or per-tap beer image directly (or use a URL); PNG, JPG, GIF, or WebP up to 2 MB (SVG is not accepted); uploads persist across container rebuilds, and the logo can double as the browser tab favicon
 - **🎨 Theming** — Dark, Light, or Auto (follows the device/browser preference) — plus a custom accent color and an optional custom CSS override
 - **🏷️ Header Options** — Collapse the establishment name/tagline area when empty, or replace the brewery name with a (size-configurable) logo across the nav bar and display page
 - **👁️ Field Visibility Toggles** — Show/hide ABV, IBU, price, keg level, style, producer, category, serve method, glassware, tasting notes, description, serving size, and tapped date, independently
 - **🔌 Brewing Software Fields** — Brewer's Friend and Grainfather batch ID fields exist in the schema (sync logic not yet implemented — PRs welcome)
-- **🔒 Auth** — Simple password-protected admin panel
+- **🔒 Auth** — Password-protected admin panel (8+ character passwords, rate-limited login)
 
 ---
 
@@ -38,13 +38,13 @@ git clone https://github.com/ipv6tech/tapmenu.git
 cd tapmenu
 ```
 
-### 2. Edit the session secret
+### 2. (Optional) Set a session secret
 
-Open `compose.yaml` and change:
+By default, Tap Menu generates a random session secret on first start and stores it in the data volume (`/data/.session_secret`), so no setup is needed. To manage it yourself, uncomment `SESSION_SECRET` in `compose.yaml` and set it to a long random string (16+ characters):
 ```yaml
-SESSION_SECRET=change-me-to-a-long-random-string
+- SESSION_SECRET=<long random string>
 ```
-to something random and secure.
+Placeholder values such as `change-me-to-a-long-random-string` are ignored. Changing the secret logs everyone out.
 
 ### 3. Start it up
 
@@ -74,7 +74,7 @@ docker run -d \
   --name tapmenu \
   -p 3000:3000 \
   -v tapmenu-data:/data \
-  -e SESSION_SECRET=change-me-to-a-long-random-string \
+  -e SESSION_SECRET=<long random string> \
   ghcr.io/ipv6tech/tapmenu:latest
 ```
 
@@ -96,7 +96,8 @@ services:
       - tapmenu-data:/data
     environment:
       - PORT=3000
-      - SESSION_SECRET=change-me-to-a-long-random-string
+      # Optional; a secret is generated and stored in the data volume if unset
+      # - SESSION_SECRET=<long random string>
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/api/auth/me"]
       interval: 30s
@@ -128,7 +129,7 @@ ports:
 
 ### Behind a Reverse Proxy (Traefik / Nginx / Caddy)
 
-The app runs on HTTP. Put your TLS termination at the reverse proxy level. Example Traefik label:
+The app runs on HTTP. Put your TLS termination at the reverse proxy level, and set `TRUST_PROXY=true` and `COOKIE_SECURE=true` so the login cookie is marked `Secure` and the per-IP login rate limit sees real client addresses. Example Traefik label:
 
 ```yaml
 labels:
@@ -160,7 +161,9 @@ docker restart tapmenu
 | Variable | Default | Description |
 |---|---|---|
 | `PORT` | `3000` | HTTP port |
-| `SESSION_SECRET` | `tapmenu-secret-...` | **Change this!** Cookie signing secret |
+| `SESSION_SECRET` | auto-generated | Cookie signing secret (16+ chars). If unset or a placeholder, a random one is generated and saved to `.session_secret` next to the database |
+| `COOKIE_SECURE` | `false` | Set `true` when served over HTTPS so the session cookie is marked `Secure` |
+| `TRUST_PROXY` | unset | Set `true` (or an Express trust-proxy value) when behind a reverse proxy |
 | `DB_PATH` | `/data/taproom.db` | SQLite database path |
 | `UPLOADS_DIR` | directory of `DB_PATH` + `/uploads` | Where uploaded logos and beer images are stored |
 
@@ -172,6 +175,8 @@ docker restart tapmenu
 docker compose pull   # if using a registry
 npm run docker:up     # if building locally — rebuilds and re-tags with the current package.json version
 ```
+
+> **Upgrading to 0.5.6+:** the session secret is now generated automatically if you haven't set a real one, so existing admins will be logged in again once. Any `change-me-...` placeholder in your compose file is ignored.
 
 ---
 
