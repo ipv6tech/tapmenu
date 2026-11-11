@@ -178,6 +178,8 @@ npm run docker:up     # if building locally — rebuilds and re-tags with the cu
 
 > **Upgrading to 0.5.6+:** the session secret is now generated automatically if you haven't set a real one, so existing admins will be logged in again once. Any `change-me-...` placeholder in your compose file is ignored.
 
+> **Upgrading to 0.5.7+:** the container now runs as the unprivileged `node` user instead of root. On start it fixes ownership of the data volume (including volumes created by older versions), then drops privileges, so no manual migration is needed. If you set `user:` in compose, make sure that user can write to the volume.
+
 ---
 
 ## URL Structure
