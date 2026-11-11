@@ -3,6 +3,9 @@ const router = express.Router();
 const { getDb } = require('../db');
 const { upsertBeerFromTap } = require('./taps');
 
+// Brewfather ids are alphanumeric; reject anything that could alter the request path
+const BF_ID = /^[A-Za-z0-9_-]{1,64}$/;
+
 function requireAuth(req, res, next) {
   if (req.session && req.session.userId) return next();
   res.status(401).json({ error: 'Unauthorized' });
@@ -82,13 +85,14 @@ router.get('/batches', requireAuth, async (req, res) => {
 
 // GET /api/brewfather/batches/:id - get single batch detail
 router.get('/batches/:id', requireAuth, async (req, res) => {
+  if (!BF_ID.test(req.params.id)) return res.status(400).json({ error: 'Invalid batch id' });
   const { userId, apiKey } = getBrewfatherCreds();
   if (!userId || !apiKey) {
     return res.status(400).json({ error: 'Brewfather credentials not configured.' });
   }
 
   try {
-    const url = `https://api.brewfather.app/v2/batches/${req.params.id}`;
+    const url = `https://api.brewfather.app/v2/batches/${encodeURIComponent(req.params.id)}`;
     const response = await fetch(url, {
       headers: { 'Authorization': makeAuthHeader(userId, apiKey) }
     });
@@ -107,6 +111,7 @@ router.get('/batches/:id', requireAuth, async (req, res) => {
 
 // POST /api/brewfather/import/:id - import a batch as a new tap
 router.post('/import/:id', requireAuth, async (req, res) => {
+  if (!BF_ID.test(req.params.id)) return res.status(400).json({ error: 'Invalid batch id' });
   const { userId, apiKey } = getBrewfatherCreds();
   if (!userId || !apiKey) {
     return res.status(400).json({ error: 'Brewfather credentials not configured.' });
@@ -116,7 +121,7 @@ router.post('/import/:id', requireAuth, async (req, res) => {
   const { v4: uuidv4 } = require('uuid');
 
   try {
-    const url = `https://api.brewfather.app/v2/batches/${req.params.id}`;
+    const url = `https://api.brewfather.app/v2/batches/${encodeURIComponent(req.params.id)}`;
     const response = await fetch(url, {
       headers: { 'Authorization': makeAuthHeader(userId, apiKey) }
     });
@@ -205,7 +210,7 @@ router.post('/import-bulk', requireAuth, async (req, res) => {
         continue;
       }
 
-      const url = `https://api.brewfather.app/v2/batches/${brewfather_id}`;
+      const url = `https://api.brewfather.app/v2/batches/${encodeURIComponent(brewfather_id)}`;
       const response = await fetch(url, {
         headers: { 'Authorization': makeAuthHeader(userId, apiKey) }
       });
@@ -259,7 +264,7 @@ router.post('/sync/:tap_id', requireAuth, async (req, res) => {
   if (!tap.brewfather_id) return res.status(400).json({ error: 'This tap is not linked to a Brewfather batch' });
 
   try {
-    const url = `https://api.brewfather.app/v2/batches/${tap.brewfather_id}`;
+    const url = `https://api.brewfather.app/v2/batches/${encodeURIComponent(tap.brewfather_id)}`;
     const response = await fetch(url, {
       headers: { 'Authorization': makeAuthHeader(userId, apiKey) }
     });
@@ -324,7 +329,7 @@ router.post('/sync-all', requireAuth, async (req, res) => {
 
   for (const tap of linkedTaps) {
     try {
-      const url = `https://api.brewfather.app/v2/batches/${tap.brewfather_id}`;
+      const url = `https://api.brewfather.app/v2/batches/${encodeURIComponent(tap.brewfather_id)}`;
       const response = await fetch(url, {
         headers: { 'Authorization': makeAuthHeader(userId, apiKey) }
       });

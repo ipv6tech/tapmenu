@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { getDb } = require('../db');
+const { validateTapInput } = require('../security');
 
 function requireAuth(req, res, next) {
   if (req.session && req.session.userId) return next();
@@ -30,6 +31,8 @@ router.put('/:id', requireAuth, (req, res) => {
   const db = getDb();
   const existing = db.prepare('SELECT * FROM beers WHERE id = ?').get(req.params.id);
   if (!existing) return res.status(404).json({ error: 'Not found' });
+  const invalid = validateTapInput(req.body);
+  if (invalid) return res.status(400).json({ error: invalid });
 
   const updates = [];
   const values = [];

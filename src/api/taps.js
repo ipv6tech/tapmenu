@@ -3,6 +3,7 @@ const router = express.Router();
 const { v4: uuidv4 } = require('uuid');
 const { getDb } = require('../db');
 const { upload } = require('../upload');
+const { validateTapInput } = require('../security');
 
 // Auth middleware
 function requireAuth(req, res, next) {
@@ -97,6 +98,8 @@ router.post('/', requireAuth, (req, res) => {
   } = req.body;
 
   if (!name) return res.status(400).json({ error: 'Name is required' });
+  const invalid = validateTapInput(req.body);
+  if (invalid) return res.status(400).json({ error: invalid });
 
   db.prepare(`
     INSERT INTO taps (
@@ -134,6 +137,8 @@ router.put('/:id', requireAuth, (req, res) => {
   const db = getDb();
   const existing = db.prepare('SELECT * FROM taps WHERE id = ?').get(req.params.id);
   if (!existing) return res.status(404).json({ error: 'Not found' });
+  const invalid = validateTapInput(req.body);
+  if (invalid) return res.status(400).json({ error: invalid });
 
   const fields = [
     'tap_number', 'tap_label', 'name', 'style', 'producer', 'abv', 'ibu', 'description',
@@ -167,7 +172,7 @@ router.put('/:id', requireAuth, (req, res) => {
 router.patch('/:id/keg-level', requireAuth, (req, res) => {
   const db = getDb();
   const { level } = req.body;
-  if (level === undefined || level < 0 || level > 100) {
+  if (level === undefined || level === null || level === '' || !Number.isFinite(Number(level)) || level < 0 || level > 100) {
     return res.status(400).json({ error: 'Level must be 0-100' });
   }
   db.prepare('UPDATE taps SET keg_level = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')

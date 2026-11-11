@@ -222,4 +222,4 @@ function runMigrations() {
   db.prepare(`UPDATE taps SET status = 'hidden' WHERE status = 'inactive'`).run();
 }
 
-module.exports = { getDb, initDb, UPLOADS_DIR };
+module.exports = { getDb, initDb, UPLOADS_DIR, DB_PATH };
