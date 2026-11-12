@@ -127,7 +127,7 @@ ports:
   - "8080:3000"   # access on port 8080 instead
 ```
 
-### Behind a Reverse Proxy (Traefik / Nginx / Caddy)
+### Behind a Reverse Proxy (Traefik / Caddy)
 
 The app runs on HTTP. Put your TLS termination at the reverse proxy level, and set `TRUST_PROXY=true` and `COOKIE_SECURE=true` so the login cookie is marked `Secure` and the per-IP login rate limit sees real client addresses. Example Traefik label:
 
