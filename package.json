@@ -1,6 +1,6 @@
 {
   "name": "tap-menu",
-  "version": "0.5.7",
+  "version": "0.6.0",
   "description": "Self-hosted digital draft beverage list",
   "license": "MIT",
   "main": "server.js",
@@ -13,8 +13,10 @@
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.5",
     "express": "^5.3.0",
+    "express-rate-limit": "^8.7.4",
     "express-session": "^1.17.3",
     "helmet": "^8.3.0",
+    "lusca": "^1.7.0",
     "multer": "^2.5.0",
     "qrcode": "^1.5.3",
     "sql.js": "^1.15.2",

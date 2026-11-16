@@ -178,6 +178,8 @@ npm run docker:up     # if building locally — rebuilds and re-tags with the cu
 
 > **Upgrading to 0.5.6+:** the session secret is now generated automatically if you haven't set a real one, so existing admins will be logged in again once. Any `change-me-...` placeholder in your compose file is ignored.
 
+> **Upgrading to 0.6.0+:** state-changing API requests (POST/PUT/DELETE) now require a CSRF token. The bundled frontend handles this automatically; scripts or integrations must first `GET /api/csrf-token` (using the same session cookie) and send the value in an `X-CSRF-Token` header. The API is also rate limited (1000 requests per 15 minutes per IP, 30 per minute on `/api/brewfather`), and a Content-Security-Policy is now sent.
+
 > **Upgrading to 0.5.7+:** the container now runs as the unprivileged `node` user instead of root. On start it fixes ownership of the data volume (including volumes created by older versions), then drops privileges, so no manual migration is needed. If you set `user:` in compose, make sure that user can write to the volume.
 
 ---

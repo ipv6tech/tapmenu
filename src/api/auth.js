@@ -4,9 +4,10 @@ const bcrypt = require('bcryptjs');
 const { v4: uuidv4 } = require('uuid');
 const { getDb } = require('../db');
 const { upload } = require('../upload');
-const { rateLimit, isSafeUrl } = require('../security');
+const { rateLimit } = require('express-rate-limit');
+const { isSafeUrl } = require('../security');
 
-const loginLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 10, message: 'Too many attempts, try again in 15 minutes' });
+const loginLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 10, standardHeaders: true, legacyHeaders: false, message: { error: 'Too many attempts, try again in 15 minutes' } });
 const MIN_PASSWORD_LENGTH = 8;
 
 function requireAuth(req, res, next) {

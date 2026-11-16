@@ -1,5 +1,9 @@
 const express = require('express');
+const { rateLimit } = require('express-rate-limit');
 const router = express.Router();
+
+// These routes call the external Brewfather API, so keep them well below the global limit.
+router.use(rateLimit({ windowMs: 60 * 1000, limit: 30, standardHeaders: true, legacyHeaders: false, message: { error: 'Too many requests, slow down' } }));
 const { getDb } = require('../db');
 const { upsertBeerFromTap } = require('./taps');
 

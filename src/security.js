@@ -25,29 +25,6 @@ function getSessionSecret(dataDir) {
   return secret;
 }
 
-// Minimal in-memory fixed-window rate limiter keyed by client IP.
-function rateLimit({ windowMs, max, message }) {
-  const hits = new Map();
-  setInterval(() => {
-    const now = Date.now();
-    for (const [k, v] of hits) if (v.reset <= now) hits.delete(k);
-  }, windowMs).unref();
-  return (req, res, next) => {
-    const now = Date.now();
-    let entry = hits.get(req.ip);
-    if (!entry || entry.reset <= now) {
-      entry = { count: 0, reset: now + windowMs };
-      hits.set(req.ip, entry);
-    }
-    entry.count++;
-    if (entry.count > max) {
-      res.set('Retry-After', String(Math.ceil((entry.reset - now) / 1000)));
-      return res.status(429).json({ error: message || 'Too many requests, try again later' });
-    }
-    next();
-  };
-}
-
 // Allow only http(s) URLs or site-relative paths (e.g. /uploads/x.png).
 function isSafeUrl(value) {
   if (value === undefined || value === null || value === '') return true;
@@ -80,4 +57,4 @@ function validateTapInput(body) {
   return null;
 }
 
-module.exports = { getSessionSecret, rateLimit, isSafeUrl, validateTapInput };
+module.exports = { getSessionSecret, isSafeUrl, validateTapInput };
